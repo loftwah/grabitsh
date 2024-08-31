@@ -18,7 +18,7 @@ Grabit.sh is a powerful command-line tool designed to quickly gather and summari
 
 ### Pre-built Binaries
 
-You can download pre-built binaries for your platform from the [Releases](https://github.com/loftwah/grabit.sh/releases) page.
+You can download pre-built binaries for your platform from the [Releases](https://github.com/loftwah/grabitsh/releases) page.
 
 #### Linux
 
@@ -66,7 +66,7 @@ If you prefer to build from source or want the latest development version:
 2. Clone the repository:
 
    ```bash
-   git clone https://github.com/loftwah/grabit.sh.git
+   git clone https://github.com/loftwah/grabitsh.git
    ```
 
 3. Navigate to the project directory:
