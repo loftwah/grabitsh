@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Grabit.sh - Library</title>
+    <title>GRABIT.SH - Library</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
@@ -13,6 +13,10 @@
     <style>
       body {
         font-family: "Inter", sans-serif;
+      }
+      pre {
+        white-space: pre-wrap; /* Wraps text for easier reading */
+        word-wrap: break-word; /* Prevents long words from overflowing */
       }
     </style>
   </head>
@@ -53,34 +57,71 @@
     <main class="mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <section class="py-12">
         <h1 class="text-4xl font-extrabold text-gray-900 text-center">
-          Grabit.sh Library
+          GRABIT.SH Library
         </h1>
         <p class="mt-4 text-center text-lg text-gray-500">
-          Discover various ways to use Grabit.sh and explore useful ChatGPT prompts to enhance your productivity.
+          Discover various ways to use GRABIT.SH and explore useful ChatGPT prompts to enhance your productivity.
         </p>
-        <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <!-- Example of a usage card -->
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-2xl font-bold text-gray-900">Usage Example 1</h3>
-            <p class="mt-4 text-gray-500">
-              Here's a description of how you can use Grabit.sh to summarize your Git repositories quickly.
-            </p>
-          </div>
 
-          <!-- More cards or content can go here -->
-        </div>
+        <!-- New Section: How to Use GRABIT.SH -->
+        <section class="mt-12">
+          <h2 class="text-3xl font-extrabold text-gray-900">How to Use GRABIT.SH</h2>
+          <p class="mt-4 text-lg text-gray-500">
+            GRABIT.SH is a versatile tool designed to help you manage and analyze your Git repositories efficiently. Follow the steps below to gather detailed project information and generate a custom bash script:
+          </p>
+
+          <!-- Step-by-Step Guide -->
+          <ol class="mt-6 list-decimal list-inside text-lg text-gray-500 space-y-4">
+            <li>
+              <strong>Download and Install:</strong> Download the GRABIT.SH binary from the official GitHub repository and move it to a directory in your PATH. Ensure it's executable:
+              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
+chmod +x grabitsh
+              </pre>
+            </li>
+            <li>
+              <strong>Run GRABIT.SH:</strong> Open your terminal, navigate to your desired Git repository, and run:
+              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
+./grabitsh --output clipboard
+              </pre>
+              This command copies the output to your clipboard for easy sharing.
+            </li>
+            <li>
+              <strong>Generate a Custom Script Using AI:</strong> Copy the output from GRABIT.SH and use the prompt below to generate a tailored bash script with AI (ChatGPT, Claude, etc.):
+              <h3 class="text-2xl font-bold text-gray-900 mt-8">Prompt for AI:</h3>
+              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
+You are an AI expert in DevOps and scripting. I have used a tool to gather detailed information about my project repository. Below is the output:
+
+[PASTE THE OUTPUT FROM GRABIT.SH HERE]
+
+Based on this output, I want you to generate a bash script that:
+1. Analyzes the project structure and lists all directories and files.
+2. Displays the contents of all configuration files such as .yml, .json, .rb, .js, and Docker-related files.
+3. Provides insights into large files and their locations.
+4. Summarizes recent Git commits, branches, and statuses.
+5. Ensures that the script can output to the terminal, clipboard, or a file based on user preference.
+6. Checks for required dependencies and provides installation instructions if missing.
+
+Additionally, provide a brief instruction guide on how to use the generated script effectively for managing the repository.
+
+Please ensure the script is well-commented, follows best practices, and is optimized for performance and readability.
+              </pre>
+            </li>
+          </ol>
+        </section>
 
         <!-- Section for ChatGPT Prompts -->
         <section class="mt-12">
           <h2 class="text-3xl font-extrabold text-gray-900">Useful ChatGPT Prompts</h2>
           <ul class="mt-4 list-disc list-inside text-lg text-gray-500">
             <li>
-              "Explain how to use Grabit.sh to analyze large repositories."
+              "Explain how to use GRABIT.SH to analyze large repositories."
             </li>
             <li>
-              "Give me a step-by-step guide on setting up Grabit.sh with Docker."
+              "Give me a step-by-step guide on setting up GRABIT.SH with Docker."
             </li>
-            <!-- More prompts can be added here -->
+            <li>
+              "Generate a bash script to automate repository analysis using GRABIT.SH output."
+            </li>
           </ul>
         </section>
       </section>
@@ -88,7 +129,7 @@
 
     <footer class="bg-gray-800 mt-12">
       <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center text-gray-400">
-        &copy; 2024 Grabit.sh. All rights reserved.
+        &copy; 2024 GRABIT.SH. All rights reserved.
       </div>
     </footer>
   </body>
