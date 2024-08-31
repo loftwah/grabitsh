@@ -17,13 +17,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, arm64]
-        exclude:
-          - goarch: arm64
-            goos: windows
     steps:
     - uses: actions/checkout@v4
 
@@ -32,52 +25,74 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: Create Release
-      if: github.event_name == 'workflow_dispatch'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Check Release
+      id: check_release
+      uses: actions/github-script@v6
       with:
-        tag_name: ${{ github.event.inputs.tag }}
-        release_name: Release ${{ github.event.inputs.tag }}
-        draft: false
-        prerelease: false
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const tag = '${{ github.event.inputs.tag }}' || '${{ github.ref }}'.split('/').pop();
+          try {
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: tag
+            });
+            console.log(`Release found: ${release.data.html_url}`);
+            return release.data.upload_url;
+          } catch (error) {
+            if (error.status === 404) {
+              console.log('Release not found. Creating new release.');
+              const release = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tag,
+                name: `Release ${tag}`,
+                draft: false,
+                prerelease: false
+              });
+              return release.data.upload_url;
+            }
+            throw error;
+          }
 
     - name: Build
-      env:
-        GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }}
       run: |
-        go build -v -o grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          mv grabitsh-${{ matrix.goos }}-${{ matrix.goarch }} grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}.exe
-        fi
+        go build -v -o grabitsh-linux-amd64
+        GOOS=darwin GOARCH=amd64 go build -v -o grabitsh-darwin-amd64
+        GOOS=windows GOARCH=amd64 go build -v -o grabitsh-windows-amd64.exe
 
     - name: Generate SHA256
       run: |
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          sha256sum grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}.exe > grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}.exe.sha256
-        else
-          sha256sum grabitsh-${{ matrix.goos }}-${{ matrix.goarch }} > grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
-        fi
+        sha256sum grabitsh-linux-amd64 > grabitsh-linux-amd64.sha256
+        sha256sum grabitsh-darwin-amd64 > grabitsh-darwin-amd64.sha256
+        sha256sum grabitsh-windows-amd64.exe > grabitsh-windows-amd64.exe.sha256
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload Release Assets
+      uses: actions/github-script@v6
       with:
-        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
-        asset_path: ./grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
-        asset_name: grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
-        asset_content_type: application/octet-stream
-
-    - name: Upload SHA256
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
-        asset_path: ./grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}.sha256
-        asset_name: grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}.sha256
-        asset_content_type: text/plain
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs').promises;
+          const { repo: { owner, repo } } = context;
+          const uploadUrl = '${{ steps.check_release.outputs.result }}';
+          
+          const assets = [
+            { name: 'grabitsh-linux-amd64', path: 'grabitsh-linux-amd64' },
+            { name: 'grabitsh-darwin-amd64', path: 'grabitsh-darwin-amd64' },
+            { name: 'grabitsh-windows-amd64.exe', path: 'grabitsh-windows-amd64.exe' },
+            { name: 'grabitsh-linux-amd64.sha256', path: 'grabitsh-linux-amd64.sha256' },
+            { name: 'grabitsh-darwin-amd64.sha256', path: 'grabitsh-darwin-amd64.sha256' },
+            { name: 'grabitsh-windows-amd64.exe.sha256', path: 'grabitsh-windows-amd64.exe.sha256' }
+          ];
+          
+          for (const asset of assets) {
+            const content = await fs.readFile(asset.path);
+            await github.rest.repos.uploadReleaseAsset({
+              owner,
+              repo,
+              release_id: uploadUrl.match(/\/releases\/(\d+)/)[1],
+              name: asset.name,
+              data: content
+            });
+          }
