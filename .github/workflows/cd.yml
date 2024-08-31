@@ -10,6 +10,10 @@ on:
         required: true
         default: 'v0.0.0'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
