@@ -1,5 +1,7 @@
 # Grabit.sh
 
+[DEMO VIDEO](https://www.youtube.com/watch?v=M6FjvHV1qak)
+
 Grabit.sh is a powerful command-line tool designed to quickly gather and summarize useful information from Git repositories. It provides developers with a comprehensive overview of a project's structure, Git information, important files, and more.
 
 ![# Grabit sh Grabit sh is a powerful command-line tool designed to quickly gather and summarize useful information from Git repositories  It provides developers with a comprehensive overview of a p](https://github.com/user-attachments/assets/f1fb1602-88bc-4898-a3c4-dbbcf92a584e)
