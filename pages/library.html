@@ -5,84 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GRABIT.SH - Library</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
     <style>
-      body {
-        font-family: "Inter", sans-serif;
-      }
-      pre {
-        white-space: pre-wrap; /* Wraps text for easier reading */
-        word-wrap: break-word; /* Prevents long words from overflowing */
-      }
+      body { font-family: "Inter", sans-serif; }
+      pre { white-space: pre-wrap; word-wrap: break-word; }
     </style>
   </head>
-
   <body class="bg-gray-50 text-gray-800">
-    <!-- Header with Navbar -->
     <header class="bg-indigo-600 text-white">
       <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center">
             <a href="index.html" class="flex-shrink-0">
-              <img
-                class="h-8 w-8"
-                src="../public/icon.png"
-                alt="GRABIT.SH logo"
-              />
+              <img class="h-8 w-8" src="../public/icon.png" alt="GRABIT.SH logo" />
             </a>
             <div class="hidden md:block">
               <div class="ml-10 flex items-baseline space-x-4">
-                <a
-                  href="../index.html"
-                  class="text-gray-300 hover:bg-indigo-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                  >Home</a
-                >
-                <a
-                  href="#"
-                  class="text-gray-300 hover:bg-indigo-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                  >Library</a
-                >
+                <a href="../index.html" class="text-gray-300 hover:bg-indigo-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                <a href="#" class="text-gray-300 hover:bg-indigo-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Library</a>
               </div>
             </div>
           </div>
         </div>
       </nav>
     </header>
-
-    <!-- Main Content -->
     <main class="mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <section class="py-12">
-        <h1 class="text-4xl font-extrabold text-gray-900 text-center">
-          GRABIT.SH Library
-        </h1>
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">GRABIT.SH Library</h1>
         <p class="mt-4 text-center text-lg text-gray-500">
-          Discover various ways to use GRABIT.SH and explore useful ChatGPT prompts to enhance your productivity.
+          Discover various ways to use GRABIT.SH and explore useful AI prompts to enhance your productivity.
         </p>
-
-        <!-- New Section: How to Use GRABIT.SH -->
         <section class="mt-12">
           <h2 class="text-3xl font-extrabold text-gray-900">How to Use GRABIT.SH</h2>
           <p class="mt-4 text-lg text-gray-500">
             GRABIT.SH is a versatile tool designed to help you manage and analyze your Git repositories efficiently. Follow the steps below to gather detailed project information and generate a custom bash script:
           </p>
-
-          <!-- Step-by-Step Guide -->
           <ol class="mt-6 list-decimal list-inside text-lg text-gray-500 space-y-4">
             <li>
               <strong>Download and Install:</strong> Download the GRABIT.SH binary from the official GitHub repository and move it to a directory in your PATH. Ensure it's executable:
-              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
-chmod +x grabitsh
-              </pre>
+              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">chmod +x grabitsh</pre>
             </li>
             <li>
               <strong>Run GRABIT.SH:</strong> Open your terminal, navigate to your desired Git repository, and run:
-              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
-./grabitsh --output clipboard
-              </pre>
+              <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">./grabitsh --output clipboard</pre>
               This command copies the output to your clipboard for easy sharing.
             </li>
             <li>
@@ -103,16 +68,16 @@ Based on this output, I want you to generate a bash script that:
 
 Additionally, provide a brief instruction guide on how to use the generated script effectively for managing the repository.
 
-Please ensure the script is well-commented, follows best practices, and is optimized for performance and readability.
-              </pre>
+Please ensure the script is well-commented, follows best practices, and is optimized for performance and readability.</pre>
             </li>
           </ol>
         </section>
-
-        <!-- Section for ChatGPT Prompts -->
         <section class="mt-12">
-          <h2 class="text-3xl font-extrabold text-gray-900">Useful ChatGPT Prompts</h2>
-          <ul class="mt-4 list-disc list-inside text-lg text-gray-500">
+          <h2 class="text-3xl font-extrabold text-gray-900">Useful AI Prompts</h2>
+          <p class="mt-4 text-lg text-gray-500">
+            Use these prompts with AI models like ChatGPT, Claude, or Llama 3.1 to leverage the GRABIT.SH output for various development tasks:
+          </p>
+          <ul class="mt-4 list-disc list-inside text-lg text-gray-500 space-y-4">
             <li>
               "Explain how to use GRABIT.SH to analyze large repositories."
             </li>
@@ -122,11 +87,38 @@ Please ensure the script is well-commented, follows best practices, and is optim
             <li>
               "Generate a bash script to automate repository analysis using GRABIT.SH output."
             </li>
+            <li>
+              <strong>Generate Project Documentation:</strong>
+              "Based on the GRABIT.SH output, please generate a comprehensive README.md file for this project. Include sections on project structure, setup instructions, and key features."
+            </li>
+            <li>
+              <strong>Feature Implementation:</strong>
+              "Using the project structure and existing codebase information from GRABIT.SH, can you help me implement a toggle feature for [specific functionality]? Please provide a step-by-step guide and sample code."
+            </li>
+            <li>
+              <strong>CI/CD Setup:</strong>
+              "Given the project details from GRABIT.SH, please help me set up a CI pipeline using GitHub Actions. Include steps for linting, testing, and deploying the application."
+            </li>
+            <li>
+              <strong>Code Refactoring:</strong>
+              "Analyze the codebase structure from GRABIT.SH and suggest refactoring opportunities to improve code quality, maintainability, and performance."
+            </li>
+            <li>
+              <strong>Dependency Management:</strong>
+              "Review the dependencies listed in the GRABIT.SH output and recommend updates or alternatives to improve security and performance. Please provide a migration plan if significant changes are needed."
+            </li>
+            <li>
+              <strong>Test Coverage Improvement:</strong>
+              "Based on the project structure and existing tests identified by GRABIT.SH, suggest a strategy to improve test coverage. Include examples of test cases for critical components."
+            </li>
+            <li>
+              <strong>Performance Optimization:</strong>
+              "Analyze the large files and complex structures noted in the GRABIT.SH output. Recommend optimization strategies to improve application performance and reduce resource usage."
+            </li>
           </ul>
         </section>
       </section>
     </main>
-
     <footer class="bg-gray-800 mt-12">
       <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center text-gray-400">
         &copy; 2024 GRABIT.SH. All rights reserved.
