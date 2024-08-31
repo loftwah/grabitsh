@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+      - 'release/**'
   pull_request:
     branches: [ main ]
 
@@ -28,3 +33,19 @@ jobs:
 
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v3
+
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: grabitsh
+        path: grabitsh
+
+  report:
+    needs: build
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check build status
+      run: |
+        echo "Build and tests passed successfully!"
+        echo "Ready for review and merge."
