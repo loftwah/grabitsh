@@ -14,32 +14,64 @@ Grabit.sh is a powerful command-line tool designed to quickly gather and summari
 
 ## Installation
 
-To install Grabit.sh, follow these steps:
+### Pre-built Binaries
 
-1. Clone the repository:
+You can download pre-built binaries for your platform from the [Releases](https://github.com/loftwah/grabit.sh/releases) page.
 
+#### Linux
+
+1. Download the `grabitsh-linux-amd64` file from the latest release.
+2. Make it executable:
    ```bash
-   git clone git@github.com:loftwah/grabit.sh.git
+   chmod +x grabitsh-linux-amd64
+   ```
+3. Optionally, move it to a directory in your PATH:
+   ```bash
+   sudo mv grabitsh-linux-amd64 /usr/local/bin/grabitsh
    ```
 
-2. Navigate to the project directory:
+#### macOS
 
+1. Download the `grabitsh-darwin-amd64` file from the latest release.
+2. Make it executable:
+   ```bash
+   chmod +x grabitsh-darwin-amd64
+   ```
+3. Optionally, move it to a directory in your PATH:
+   ```bash
+   sudo mv grabitsh-darwin-amd64 /usr/local/bin/grabitsh
+   ```
+
+#### Windows
+
+1. Download the `grabitsh-windows-amd64.exe` file from the latest release.
+2. Optionally, rename it to `grabitsh.exe` for convenience.
+3. Add the directory containing the executable to your PATH environment variable.
+
+### Building from Source
+
+If you prefer to build from source or want the latest development version:
+
+1. Ensure you have Go installed on your system.
+2. Clone the repository:
+   ```bash
+   git clone https://github.com/loftwah/grabit.sh.git
+   ```
+3. Navigate to the project directory:
    ```bash
    cd grabit.sh
    ```
-
-3. Build the project:
-
+4. Build the project:
    ```bash
    go build -o grabitsh
    ```
 
 ## Usage
 
-To use Grabit.sh, run the following command in your terminal:
+To use Grabit.sh, navigate to a Git repository directory and run the following command:
 
 ```bash
-./grabitsh --output <output_method>
+grabitsh --output <output_method>
 ```
 
 Replace `<output_method>` with one of the following options:
@@ -51,21 +83,18 @@ Replace `<output_method>` with one of the following options:
 ### Examples
 
 1. Display output in the terminal:
-
    ```bash
-   ./grabitsh --output stdout
+   grabitsh --output stdout
    ```
 
 2. Copy output to clipboard:
-
    ```bash
-   ./grabitsh --output clipboard
+   grabitsh --output clipboard
    ```
 
 3. Save output to a file:
-
    ```bash
-   ./grabitsh --output file -f output.txt
+   grabitsh --output file -f output.txt
    ```
 
 ## Web Server
@@ -73,14 +102,14 @@ Replace `<output_method>` with one of the following options:
 Grabit.sh also includes a web server feature. To start the web server, use the following command:
 
 ```bash
-./grabitsh serve
+grabitsh serve
 ```
 
 This will start a web server on port 42069. You can access it by navigating to `http://localhost:42069` in your web browser.
 
 ## Project Structure
 
-```bash
+```
 grabit.sh/
 ├── cmd/
 │   └── grabitsh/
