@@ -3,6 +3,12 @@ name: CD
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for this release'
+        required: true
+        default: 'v0.0.0'
 
 jobs:
   release:
@@ -21,6 +27,18 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
+
+    - name: Create Release
+      if: github.event_name == 'workflow_dispatch'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.tag }}
+        release_name: Release ${{ github.event.inputs.tag }}
+        draft: false
+        prerelease: false
 
     - name: Build
       env:
@@ -45,7 +63,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.release.upload_url }}
+        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
         asset_path: ./grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
         asset_name: grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
         asset_content_type: application/octet-stream
@@ -55,7 +73,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.release.upload_url }}
+        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
         asset_path: ./grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}.sha256
         asset_name: grabitsh-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}.sha256
         asset_content_type: text/plain
