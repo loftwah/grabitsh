@@ -20,11 +20,16 @@ Grabit.sh is a powerful command-line tool designed to quickly gather and summari
 
 ### Pre-built Binaries
 
-You can download pre-built binaries for your platform from the [Releases](https://github.com/loftwah/grabitsh/releases) page.
+You can download pre-built binaries for your platform from the [Releases](https://github.com/loftwah/grabitsh/releases) page or use `curl` for direct download.
 
 #### Linux
 
-1. Download the `grabitsh-linux-amd64` file from the latest release.
+1. Download the `grabitsh-linux-amd64` file from the latest release:
+
+   ```bash
+   curl -L -o grabitsh-linux-amd64 https://github.com/loftwah/grabitsh/releases/latest/download/grabitsh-linux-amd64
+   ```
+
 2. Make it executable:
 
    ```bash
@@ -39,7 +44,11 @@ You can download pre-built binaries for your platform from the [Releases](https:
 
 #### macOS
 
-1. Download the `grabitsh-darwin-amd64` file from the latest release.
+1. Download the `grabitsh-darwin-amd64` file from the latest release:
+
+   ```bash
+   curl -L -o grabitsh-darwin-amd64 https://github.com/loftwah/grabitsh/releases/latest/download/grabitsh-darwin-amd64
+   ```
 
 2. Make it executable:
 
@@ -55,8 +64,14 @@ You can download pre-built binaries for your platform from the [Releases](https:
 
 #### Windows
 
-1. Download the `grabitsh-windows-amd64.exe` file from the latest release.
+1. Download the `grabitsh-windows-amd64.exe` file from the latest release using a browser or:
+
+   ```bash
+   curl -L -o grabitsh-windows-amd64.exe https://github.com/loftwah/grabitsh/releases/latest/download/grabitsh-windows-amd64.exe
+   ```
+
 2. Optionally, rename it to `grabitsh.exe` for convenience.
+
 3. Add the directory containing the executable to your PATH environment variable.
 
 ### Building from Source
