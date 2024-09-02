@@ -40,28 +40,44 @@ func Execute() error {
 func runGrabit(cmd *cobra.Command, args []string) {
 	var outputBuffer bytes.Buffer
 
-	// Repository structure
-	outputBuffer.WriteString("### Repository Structure ###\n")
-	outputBuffer.WriteString(runCommand("ls", "-lah"))
+	// Collect all sections
+	collectRepoStructure(&outputBuffer)
+	collectGitInfo(&outputBuffer)
+	collectConfigFiles(&outputBuffer)
+	collectLargeFiles(&outputBuffer)
+	collectFileTypeSummary(&outputBuffer)
+	collectRecentlyModifiedFiles(&outputBuffer)
+	collectProjectTypes(&outputBuffer)
+
+	// Output results
+	finalizeOutput(outputBuffer.String())
+}
+
+// Helper functions to collect information
+func collectRepoStructure(buffer *bytes.Buffer) {
+	buffer.WriteString("### Repository Structure ###\n")
+	buffer.WriteString(runCommand("ls", "-lah"))
 	if _, err := exec.LookPath("tree"); err == nil {
-		outputBuffer.WriteString(runCommand("tree", "-L", "2", "-a"))
+		buffer.WriteString(runCommand("tree", "-L", "2", "-a"))
 	} else {
-		outputBuffer.WriteString("(Tree command not available)\n")
+		buffer.WriteString("(Tree command not available)\n")
 	}
+}
 
-	// Git information
-	outputBuffer.WriteString("\n### Git Information ###\n")
-	outputBuffer.WriteString("Recent Commits:\n")
-	outputBuffer.WriteString(runCommand("git", "log", "--oneline", "-n", "5"))
-	outputBuffer.WriteString("\nBranches:\n")
-	outputBuffer.WriteString(runCommand("git", "branch", "-a"))
-	outputBuffer.WriteString("\nRemote Repositories:\n")
-	outputBuffer.WriteString(runCommand("git", "remote", "-v"))
-	outputBuffer.WriteString("\nGit Status:\n")
-	outputBuffer.WriteString(runCommand("git", "status", "--short"))
+func collectGitInfo(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Git Information ###\n")
+	buffer.WriteString("Recent Commits:\n")
+	buffer.WriteString(runCommand("git", "log", "--oneline", "-n", "5"))
+	buffer.WriteString("\nBranches:\n")
+	buffer.WriteString(runCommand("git", "branch", "-a"))
+	buffer.WriteString("\nRemote Repositories:\n")
+	buffer.WriteString(runCommand("git", "remote", "-v"))
+	buffer.WriteString("\nGit Status:\n")
+	buffer.WriteString(runCommand("git", "status", "--short"))
+}
 
-	// Configuration and important files
-	outputBuffer.WriteString("\n### Configuration and Important Files ###\n")
+func collectConfigFiles(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Configuration and Important Files ###\n")
 	importantFiles := []string{
 		".gitignore", "README*", "LICENSE*", "Dockerfile*", ".env*",
 		"Makefile", "package.json", "go.mod", "requirements.txt",
@@ -71,32 +87,33 @@ func runGrabit(cmd *cobra.Command, args []string) {
 		matches, err := filepath.Glob(filepath.Join(".", file))
 		if err == nil && len(matches) > 0 {
 			for _, match := range matches {
-				outputBuffer.WriteString(match + "\n")
+				buffer.WriteString(match + "\n")
 			}
 		}
 	}
+}
 
-	// Large files
-	outputBuffer.WriteString("\n### Large Files (top 5) ###\n")
-	outputBuffer.WriteString(findLargeFiles())
+func collectLargeFiles(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Large Files (top 5) ###\n")
+	buffer.WriteString(runCommand("bash", "-c", "find . -type f -exec du -h {} + | sort -rh | head -n 5"))
+}
 
-	// File types summary
-	outputBuffer.WriteString("\n### File Types Summary ###\n")
-	outputBuffer.WriteString(summarizeFileTypes())
+func collectFileTypeSummary(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### File Types Summary ###\n")
+	buffer.WriteString(runCommand("bash", "-c", "find . -type f | sed -e 's/.*\\.//' | sort | uniq -c | sort -rn | head -n 10"))
+}
 
-	// Recent changes
-	outputBuffer.WriteString("\n### Recently Modified Files ###\n")
-	outputBuffer.WriteString(findRecentlyModifiedFiles())
+func collectRecentlyModifiedFiles(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Recently Modified Files ###\n")
+	buffer.WriteString(runCommand("find", ".", "-type", "f", "-mtime", "-7", "-not", "-path", "./.git/*"))
+}
 
-	// Project type detection
-	outputBuffer.WriteString("\n### Project Type Detection ###\n")
+func collectProjectTypes(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Project Type Detection ###\n")
 	projectTypes := DetectProjectTypes()
 	for _, projectType := range projectTypes {
-		outputBuffer.WriteString(fmt.Sprintf("- %s\n", projectType))
+		buffer.WriteString(fmt.Sprintf("- %s\n", projectType))
 	}
-
-	// Output results
-	finalizeOutput(outputBuffer.String())
 }
 
 func runCommand(name string, arg ...string) string {
@@ -108,40 +125,12 @@ func runCommand(name string, arg ...string) string {
 	return string(out)
 }
 
-func findLargeFiles() string {
-	cmd := exec.Command("bash", "-c", "find . -type f -exec du -h {} + | sort -rh | head -n 5")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Sprintf("Error finding large files: %v\n", err)
-	}
-	return string(out)
-}
-
-func summarizeFileTypes() string {
-	cmd := exec.Command("bash", "-c", "find . -type f | sed -e 's/.*\\.//' | sort | uniq -c | sort -rn | head -n 10")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Sprintf("Error summarizing file types: %v\n", err)
-	}
-	return string(out)
-}
-
-func findRecentlyModifiedFiles() string {
-	cmd := exec.Command("find", ".", "-type", "f", "-mtime", "-7", "-not", "-path", "./.git/*")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Sprintf("Error finding recently modified files: %v\n", err)
-	}
-	return string(out)
-}
-
 func finalizeOutput(content string) {
 	switch outputMethod {
 	case "stdout":
 		color.Green(content)
 	case "clipboard":
-		err := clipboard.WriteAll(content)
-		if err != nil {
+		if err := clipboard.WriteAll(content); err != nil {
 			color.Red("Failed to copy to clipboard: %v", err)
 		} else {
 			color.Green("Copied to clipboard successfully.")
@@ -151,8 +140,7 @@ func finalizeOutput(content string) {
 			color.Red("Output file path must be specified when using file output method.")
 			return
 		}
-		err := os.WriteFile(outputFile, []byte(content), 0644)
-		if err != nil {
+		if err := os.WriteFile(outputFile, []byte(content), 0644); err != nil {
 			color.Red("Failed to write to file: %v", err)
 		} else {
 			color.Green("Output written to file: %s", outputFile)

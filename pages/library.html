@@ -54,21 +54,23 @@
               <strong>Generate a Custom Script Using AI:</strong> Copy the output from GRABIT.SH and use the prompt below to generate a tailored bash script with AI (ChatGPT, Claude, etc.):
               <h3 class="text-2xl font-bold text-gray-900 mt-8">Prompt for AI:</h3>
               <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
-You are an AI expert in DevOps and scripting. I have used a tool to gather detailed information about my project repository. Below is the output:
+You are an expert in DevOps and Bash scripting. Based on the provided output, I need you to generate a comprehensive Bash script that performs the following tasks:
 
-[PASTE THE OUTPUT FROM GRABIT.SH HERE]
+1. Analyzes the project structure and lists all directories and files in a clear, hierarchical format.
+2. Displays the contents of important configuration files such as .yml, .json, .rb, .js, and Docker-related files.
+3. Identifies large files and lists them with their file paths to provide insights into storage usage.
+4. Summarizes recent Git commits, branches, and statuses to give an overview of repository activity.
+5. Supports multiple output methods: terminal display, clipboard copy, or saving to a file, based on user preference.
+6. Checks for required dependencies and provides clear installation instructions if any are missing.
+7. Ensures the script is modular, well-commented, follows best practices, and is optimized for performance and readability.
 
-Based on this output, I want you to generate a bash script that:
-1. Analyzes the project structure and lists all directories and files.
-2. Displays the contents of all configuration files such as .yml, .json, .rb, .js, and Docker-related files.
-3. Provides insights into large files and their locations.
-4. Summarizes recent Git commits, branches, and statuses.
-5. Ensures that the script can output to the terminal, clipboard, or a file based on user preference.
-6. Checks for required dependencies and provides installation instructions if missing.
+Requirements:
+- The script should be modular and easy to understand, with functions clearly separated by task.
+- Include robust error handling to manage missing files, failed commands, or any unexpected conditions.
+- Ensure cross-platform compatibility for macOS and Linux environments, with appropriate commands for clipboard operations and other OS-specific tasks.
+- Avoid including specific examples in the output; focus on generating a general-purpose script that meets these criteria.
 
-Additionally, provide a brief instruction guide on how to use the generated script effectively for managing the repository.
-
-Please ensure the script is well-commented, follows best practices, and is optimized for performance and readability.</pre>
+Ensure the final script adheres to these requirements and accurately reflects the provided output.</pre>
             </li>
           </ol>
         </section>
