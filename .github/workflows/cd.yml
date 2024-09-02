@@ -3,12 +3,15 @@ name: CD
 on:
   release:
     types: [created]
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering
     inputs:
       tag:
         description: 'Tag for this release'
         required: true
         default: 'v0.0.0'
+  push: # Automatically triggers on push to main
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -31,7 +34,7 @@ jobs:
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
-          const tag = '${{ github.event.inputs.tag }}' || '${{ github.ref }}'.split('/').pop();
+          const tag = '${{ github.event.inputs.tag || github.ref.split('/').pop() }}';
           try {
             const release = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
