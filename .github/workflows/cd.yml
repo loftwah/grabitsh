@@ -3,13 +3,13 @@ name: CD
 on:
   release:
     types: [created]
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:
     inputs:
       tag:
         description: 'Tag for this release'
         required: true
         default: 'v0.0.0'
-  push: # Automatically triggers on push to main
+  push:
     branches:
       - main
 
@@ -21,83 +21,88 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
 
-    - name: Check Release
-      id: check_release
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          const inputTag = "${{ github.event.inputs.tag }}";
-          const refTag = "${{ github.ref }}".split('/').pop();
-          const tag = inputTag || refTag;
-          try {
-            const release = await github.rest.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: tag
-            });
-            console.log(`Release found: ${release.data.html_url}`);
-            return release.data.upload_url;
-          } catch (error) {
-            if (error.status === 404) {
-              console.log('Release not found. Creating new release.');
-              const release = await github.rest.repos.createRelease({
+      - name: Check Release
+        id: check_release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const inputTag = "${{ github.event.inputs.tag }}";
+            const refTag = "${{ github.ref }}".split('/').pop();
+            const tag = inputTag || refTag;
+
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                tag_name: tag,
-                name: `Release ${tag}`,
-                draft: false,
-                prerelease: false
+                tag: tag
               });
+              console.log(`Release found: ${release.data.html_url}`);
               return release.data.upload_url;
+            } catch (error) {
+              if (error.status === 404) {
+                console.log('Release not found. Creating new release.');
+                const release = await github.rest.repos.createRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag_name: tag,
+                  name: `Release ${tag}`,
+                  draft: false,
+                  prerelease: false
+                });
+                return release.data.upload_url;
+              }
+              throw error;
             }
-            throw error;
-          }
 
-    - name: Build
-      run: |
-        go build -v -o grabitsh-linux-amd64
-        GOOS=darwin GOARCH=amd64 go build -v -o grabitsh-darwin-amd64
-        GOOS=windows GOARCH=amd64 go build -v -o grabitsh-windows-amd64.exe
+      - name: Build
+        run: |
+          go build -v -o grabitsh-linux-amd64
+          GOOS=darwin GOARCH=amd64 go build -v -o grabitsh-darwin-amd64
+          GOOS=windows GOARCH=amd64 go build -v -o grabitsh-windows-amd64.exe
 
-    - name: Generate SHA256
-      run: |
-        sha256sum grabitsh-linux-amd64 > grabitsh-linux-amd64.sha256
-        sha256sum grabitsh-darwin-amd64 > grabitsh-darwin-amd64.sha256
-        sha256sum grabitsh-windows-amd64.exe > grabitsh-windows-amd64.exe.sha256
+      - name: Generate SHA256
+        run: |
+          sha256sum grabitsh-linux-amd64 > grabitsh-linux-amd64.sha256
+          sha256sum grabitsh-darwin-amd64 > grabitsh-darwin-amd64.sha256
+          sha256sum grabitsh-windows-amd64.exe > grabitsh-windows-amd64.exe.sha256
 
-    - name: Upload Release Assets
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          const fs = require('fs').promises;
-          const { repo: { owner, repo } } = context;
-          const uploadUrl = '${{ steps.check_release.outputs.result }}';
-          
-          const assets = [
-            { name: 'grabitsh-linux-amd64', path: 'grabitsh-linux-amd64' },
-            { name: 'grabitsh-darwin-amd64', path: 'grabitsh-darwin-amd64' },
-            { name: 'grabitsh-windows-amd64.exe', path: 'grabitsh-windows-amd64.exe' },
-            { name: 'grabitsh-linux-amd64.sha256', path: 'grabitsh-linux-amd64.sha256' },
-            { name: 'grabitsh-darwin-amd64.sha256', path: 'grabitsh-darwin-amd64.sha256' },
-            { name: 'grabitsh-windows-amd64.exe.sha256', path: 'grabitsh-windows-amd64.exe.sha256' }
-          ];
-          
-          for (const asset of assets) {
-            const content = await fs.readFile(asset.path);
-            await github.rest.repos.uploadReleaseAsset({
-              owner,
-              repo,
-              release_id: uploadUrl.match(/\/releases\/(\d+)/)[1],
-              name: asset.name,
-              data: content
-            });
-          }
+      - name: Upload Release Assets
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const fs = require('fs').promises;
+            const { repo: { owner, repo } } = context;
+            const uploadUrl = '${{ steps.check_release.outputs.result }}';
+
+            const assets = [
+              { name: 'grabitsh-linux-amd64', path: 'grabitsh-linux-amd64' },
+              { name: 'grabitsh-darwin-amd64', path: 'grabitsh-darwin-amd64' },
+              { name: 'grabitsh-windows-amd64.exe', path: 'grabitsh-windows-amd64.exe' },
+              { name: 'grabitsh-linux-amd64.sha256', path: 'grabitsh-linux-amd64.sha256' },
+              { name: 'grabitsh-darwin-amd64.sha256', path: 'grabitsh-darwin-amd64.sha256' },
+              { name: 'grabitsh-windows-amd64.exe.sha256', path: 'grabitsh-windows-amd64.exe.sha256' }
+            ];
+
+            for (const asset of assets) {
+              try {
+                const content = await fs.readFile(asset.path);
+                await github.rest.repos.uploadReleaseAsset({
+                  owner,
+                  repo,
+                  release_id: uploadUrl.match(/\/releases\/(\d+)/)[1],
+                  name: asset.name,
+                  data: content
+                });
+              } catch (error) {
+                console.error(`Failed to upload asset ${asset.name}: ${error}`);
+              }
+            }
