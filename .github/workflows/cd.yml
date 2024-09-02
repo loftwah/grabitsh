@@ -34,7 +34,9 @@ jobs:
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
-          const tag = '${{ github.event.inputs.tag || github.ref.split('/').pop() }}';
+          const inputTag = "${{ github.event.inputs.tag }}";
+          const refTag = "${{ github.ref }}".split('/').pop();
+          const tag = inputTag || refTag;
           try {
             const release = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
