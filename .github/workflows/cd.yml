@@ -3,13 +3,13 @@ name: CD
 on:
   release:
     types: [created]
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering
     inputs:
       tag:
         description: 'Tag for this release'
         required: true
         default: 'v0.0.0'
-  push:
+  push: # Automatically triggers on push to main
     branches:
       - main
 
@@ -45,7 +45,7 @@ jobs:
                 tag: tag
               });
               console.log(`Release found: ${release.data.html_url}`);
-              return release.data.upload_url;
+              return { upload_url: release.data.upload_url, release_id: release.data.id };
             } catch (error) {
               if (error.status === 404) {
                 console.log('Release not found. Creating new release.');
@@ -57,7 +57,7 @@ jobs:
                   draft: false,
                   prerelease: false
                 });
-                return release.data.upload_url;
+                return { upload_url: release.data.upload_url, release_id: release.data.id };
               }
               throw error;
             }
@@ -81,28 +81,34 @@ jobs:
           script: |
             const fs = require('fs').promises;
             const { repo: { owner, repo } } = context;
-            const uploadUrl = '${{ steps.check_release.outputs.result }}';
+            const { upload_url, release_id } = ${{ steps.check_release.outputs.result }};
+
+            // Generate a unique identifier to avoid conflicts
+            const uniqueSuffix = Date.now();
 
             const assets = [
-              { name: 'grabitsh-linux-amd64', path: 'grabitsh-linux-amd64' },
-              { name: 'grabitsh-darwin-amd64', path: 'grabitsh-darwin-amd64' },
-              { name: 'grabitsh-windows-amd64.exe', path: 'grabitsh-windows-amd64.exe' },
-              { name: 'grabitsh-linux-amd64.sha256', path: 'grabitsh-linux-amd64.sha256' },
-              { name: 'grabitsh-darwin-amd64.sha256', path: 'grabitsh-darwin-amd64.sha256' },
-              { name: 'grabitsh-windows-amd64.exe.sha256', path: 'grabitsh-windows-amd64.exe.sha256' }
+              { name: `grabitsh-linux-amd64-${uniqueSuffix}`, path: 'grabitsh-linux-amd64' },
+              { name: `grabitsh-darwin-amd64-${uniqueSuffix}`, path: 'grabitsh-darwin-amd64' },
+              { name: `grabitsh-windows-amd64-${uniqueSuffix}.exe`, path: 'grabitsh-windows-amd64.exe' },
+              { name: `grabitsh-linux-amd64-${uniqueSuffix}.sha256`, path: 'grabitsh-linux-amd64.sha256' },
+              { name: `grabitsh-darwin-amd64-${uniqueSuffix}.sha256`, path: 'grabitsh-darwin-amd64.sha256' },
+              { name: `grabitsh-windows-amd64-${uniqueSuffix}.exe.sha256`, path: 'grabitsh-windows-amd64.exe.sha256' }
             ];
 
-            for (const asset of assets) {
-              try {
-                const content = await fs.readFile(asset.path);
-                await github.rest.repos.uploadReleaseAsset({
-                  owner,
-                  repo,
-                  release_id: uploadUrl.match(/\/releases\/(\d+)/)[1],
-                  name: asset.name,
-                  data: content
-                });
-              } catch (error) {
-                console.error(`Failed to upload asset ${asset.name}: ${error}`);
+            (async () => {
+              for (const asset of assets) {
+                try {
+                  const content = await fs.readFile(asset.path);
+                  await github.rest.repos.uploadReleaseAsset({
+                    owner,
+                    repo,
+                    release_id,
+                    name: asset.name,
+                    data: content
+                  });
+                  console.log(`Successfully uploaded asset ${asset.name}`);
+                } catch (error) {
+                  console.error(`Failed to upload asset ${asset.name}: ${error.message}`);
+                }
               }
-            }
+            })();
