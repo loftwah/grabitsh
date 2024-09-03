@@ -3,7 +3,6 @@ package grabitsh
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -179,7 +178,7 @@ func analyzeGitHubDir(output *strings.Builder) {
 			output.WriteString("GitHub Actions workflows found:\n")
 			workflows, _ := filepath.Glob(".github/workflows/*.yml")
 			for _, workflow := range workflows {
-				content, err := ioutil.ReadFile(workflow)
+				content, err := os.ReadFile(workflow) // Updated from ioutil.ReadFile to os.ReadFile
 				if err == nil {
 					output.WriteString(fmt.Sprintf("Workflow: %s\n", filepath.Base(workflow)))
 					output.WriteString(truncateContent(string(content)))
@@ -212,7 +211,7 @@ func analyzeImportantDirs(output *strings.Builder) {
 		output.WriteString("\n### Terraform Files ###\n")
 		tfFiles, _ := filepath.Glob("terraform/*.tf")
 		for _, file := range tfFiles {
-			content, err := ioutil.ReadFile(file)
+			content, err := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
 			if err == nil {
 				output.WriteString(fmt.Sprintf("File: %s\n", filepath.Base(file)))
 				output.WriteString(truncateContent(string(content)))
@@ -235,7 +234,7 @@ func analyzeImportantFiles(output *strings.Builder) {
 	output.WriteString("\n### Important Files ###\n")
 	for _, file := range importantFiles {
 		if fileExists(file) {
-			content, err := ioutil.ReadFile(file)
+			content, err := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
 			if err == nil {
 				output.WriteString(fmt.Sprintf("File: %s\n", file))
 				if file == ".env" {
@@ -261,7 +260,7 @@ func analyzeImportantFiles(output *strings.Builder) {
 		for _, ext := range extensions {
 			fileName := baseName + ext
 			if fileExists(fileName) {
-				content, err := ioutil.ReadFile(fileName)
+				content, err := os.ReadFile(fileName) // Updated from ioutil.ReadFile to os.ReadFile
 				if err == nil {
 					output.WriteString(fmt.Sprintf("File: %s\n", fileName))
 					output.WriteString(truncateContent(string(content)))
@@ -278,14 +277,14 @@ func analyzeGoProject(output *strings.Builder) {
 		output.WriteString("\n### Go Project Analysis ###\n")
 
 		// Analyze go.mod
-		modContent, _ := ioutil.ReadFile("go.mod")
+		modContent, _ := os.ReadFile("go.mod") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("go.mod contents:\n")
 		output.WriteString(truncateContent(string(modContent)))
 		output.WriteString("\n\n")
 
 		// Analyze main.go if it exists
 		if fileExists("main.go") {
-			mainContent, _ := ioutil.ReadFile("main.go")
+			mainContent, _ := os.ReadFile("main.go") // Updated from ioutil.ReadFile to os.ReadFile
 			output.WriteString("main.go contents:\n")
 			output.WriteString(truncateContent(string(mainContent)))
 			output.WriteString("\n\n")
@@ -313,7 +312,7 @@ func analyzeDependencies(output *strings.Builder) {
 
 	// Analyze package.json for Node.js projects
 	if fileExists("package.json") {
-		content, _ := ioutil.ReadFile("package.json")
+		content, _ := os.ReadFile("package.json") // Updated from ioutil.ReadFile to os.ReadFile
 		var packageJSON map[string]interface{}
 		if err := json.Unmarshal(content, &packageJSON); err == nil {
 			if deps, ok := packageJSON["dependencies"].(map[string]interface{}); ok {
@@ -327,7 +326,7 @@ func analyzeDependencies(output *strings.Builder) {
 
 	// Analyze go.mod for Go projects
 	if fileExists("go.mod") {
-		content, _ := ioutil.ReadFile("go.mod")
+		content, _ := os.ReadFile("go.mod") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("Go Dependencies:\n")
 		lines := strings.Split(string(content), "\n")
 		for _, line := range lines {
@@ -343,7 +342,7 @@ func analyzeConfiguration(output *strings.Builder) {
 
 	// Analyze .env file
 	if fileExists(".env") {
-		content, _ := ioutil.ReadFile(".env")
+		content, _ := os.ReadFile(".env") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("Environment variables (sanitized):\n")
 		output.WriteString(sanitizeEnvFile(string(content)))
 		output.WriteString("\n")
@@ -363,7 +362,7 @@ func analyzeConfiguration(output *strings.Builder) {
 	yamlFiles = append(yamlFiles, ymlFiles...)
 
 	for _, file := range yamlFiles {
-		content, err := ioutil.ReadFile(file)
+		content, err := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
 		if err != nil {
 			output.WriteString(fmt.Sprintf("Error reading file %s: %v\n", file, err))
 			continue
@@ -383,14 +382,14 @@ func analyzeDocumentation(output *strings.Builder) {
 	output.WriteString("\n### Documentation Analysis ###\n")
 
 	if fileExists("README.md") {
-		content, _ := ioutil.ReadFile("README.md")
+		content, _ := os.ReadFile("README.md") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("README.md contents:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
 	}
 
 	if fileExists("LICENSE") {
-		content, _ := ioutil.ReadFile("LICENSE")
+		content, _ := os.ReadFile("LICENSE") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("LICENSE contents:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -399,7 +398,7 @@ func analyzeDocumentation(output *strings.Builder) {
 	// Check for other documentation files
 	docFiles, _ := filepath.Glob("docs/*.md")
 	for _, file := range docFiles {
-		content, _ := ioutil.ReadFile(file)
+		content, _ := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString(fmt.Sprintf("Documentation file: %s\n", file))
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -410,7 +409,7 @@ func analyzeContainerization(output *strings.Builder) {
 	output.WriteString("\n### Containerization Analysis ###\n")
 
 	if fileExists("Dockerfile") {
-		content, _ := ioutil.ReadFile("Dockerfile")
+		content, _ := os.ReadFile("Dockerfile") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("Dockerfile found:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -419,7 +418,7 @@ func analyzeContainerization(output *strings.Builder) {
 	composeFiles := []string{"docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"}
 	for _, file := range composeFiles {
 		if fileExists(file) {
-			content, _ := ioutil.ReadFile(file)
+			content, _ := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
 			output.WriteString(fmt.Sprintf("%s found:\n", file))
 			output.WriteString(truncateContent(string(content)))
 			output.WriteString("\n\n")
@@ -435,7 +434,7 @@ func analyzeInfrastructureAsCode(output *strings.Builder) {
 		output.WriteString("Terraform configuration found.\n")
 		tfFiles, _ := filepath.Glob("terraform/*.tf")
 		for _, file := range tfFiles {
-			content, _ := ioutil.ReadFile(file)
+			content, _ := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
 			output.WriteString(fmt.Sprintf("File: %s\n", filepath.Base(file)))
 			output.WriteString(truncateContent(string(content)))
 			output.WriteString("\n\n")
@@ -457,7 +456,7 @@ func analyzeCICDPipelines(output *strings.Builder) {
 	output.WriteString("\n### CI/CD Pipeline Analysis ###\n")
 
 	if fileExists("Jenkinsfile") {
-		content, _ := ioutil.ReadFile("Jenkinsfile")
+		content, _ := os.ReadFile("Jenkinsfile") // Updated from ioutil.ReadFile to os.ReadFile
 		output.WriteString("Jenkinsfile found:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
