@@ -112,7 +112,7 @@ func AnalyzeRepository() string {
 
 	// Analyze root directory
 	output.WriteString("### Repository Structure ###\n")
-	analyzeDirectory(".", &output, 0)
+	analyzeDirectory(".", &output, 0, 2)
 
 	// Analyze specific directories and files
 	analyzeGitHubDir(&output)
@@ -129,7 +129,11 @@ func AnalyzeRepository() string {
 	return output.String()
 }
 
-func analyzeDirectory(dir string, output *strings.Builder, depth int) {
+func analyzeDirectory(dir string, output *strings.Builder, depth int, maxDepth int) {
+	if depth > maxDepth {
+		return
+	}
+
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		fmt.Fprintf(output, "Error reading directory %s: %v\n", dir, err)
@@ -141,14 +145,31 @@ func analyzeDirectory(dir string, output *strings.Builder, depth int) {
 		path := filepath.Join(dir, file.Name())
 
 		if file.IsDir() {
+			if file.Name() == ".git" {
+				fmt.Fprintf(output, "%s📁 %s (Git repository)\n", indent, file.Name())
+				continue
+			}
+			if shouldExcludeDir(file.Name()) {
+				continue
+			}
 			fmt.Fprintf(output, "%s📁 %s\n", indent, file.Name())
-			if depth < 2 { // Limit depth to avoid excessive output
-				analyzeDirectory(path, output, depth+1)
+			if depth < maxDepth {
+				analyzeDirectory(path, output, depth+1, maxDepth)
 			}
 		} else {
 			fmt.Fprintf(output, "%s📄 %s\n", indent, file.Name())
 		}
 	}
+}
+
+func shouldExcludeDir(name string) bool {
+	excludeDirs := []string{"node_modules", "vendor", "dist", "build"}
+	for _, dir := range excludeDirs {
+		if name == dir {
+			return true
+		}
+	}
+	return false
 }
 
 func analyzeGitHubDir(output *strings.Builder) {
@@ -183,7 +204,7 @@ func analyzeImportantDirs(output *strings.Builder) {
 	for _, dir := range importantDirs {
 		if dirExists(dir) {
 			output.WriteString(fmt.Sprintf("\n### %s Directory Contents ###\n", dir))
-			analyzeDirectory(dir, output, 0)
+			analyzeDirectory(dir, output, 0, 1)
 		}
 	}
 
