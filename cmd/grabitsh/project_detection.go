@@ -134,7 +134,7 @@ func analyzeDirectory(dir string, output *strings.Builder, depth int, maxDepth i
 		return
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir) // Updated from ioutil.ReadDir to os.ReadDir
 	if err != nil {
 		fmt.Fprintf(output, "Error reading directory %s: %v\n", dir, err)
 		return
