@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     branches:
-      - main  # Triggers on every push to the main branch
+      - main  # Automatically triggers on every push to the main branch
   release:
     types: [created]  # Also triggers on release creation
   workflow_dispatch:  # Allows manual triggering
@@ -35,9 +35,19 @@ jobs:
           sha256sum grabitsh-darwin-amd64 > grabitsh-darwin-amd64.sha256
           sha256sum grabitsh-windows-amd64.exe > grabitsh-windows-amd64.exe.sha256
 
+      - name: Create Tag
+        id: create_tag
+        run: |
+          TAG="v1.0.$(date +'%s')"  # Generates a unique tag based on the current timestamp
+          git tag $TAG
+          git push origin $TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.create_tag.outputs.tag }}  # Uses the newly created tag
           files: |
             grabitsh-linux-amd64
             grabitsh-darwin-amd64
