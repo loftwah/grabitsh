@@ -43,22 +43,24 @@ func runGrabit(cmd *cobra.Command, args []string) {
 	// Collect all sections
 	collectRepoStructure(&outputBuffer)
 	collectGitInfo(&outputBuffer)
-	collectConfigFiles(&outputBuffer)
+	collectProjectAnalysis(&outputBuffer)
 	collectLargeFiles(&outputBuffer)
 	collectFileTypeSummary(&outputBuffer)
 	collectRecentlyModifiedFiles(&outputBuffer)
 	collectProjectTypes(&outputBuffer)
+	collectTODOs(&outputBuffer)
+	collectSecurityAnalysis(&outputBuffer)
+	collectPerformanceMetrics(&outputBuffer)
 
 	// Output results
 	finalizeOutput(outputBuffer.String())
 }
 
-// Helper functions to collect information
 func collectRepoStructure(buffer *bytes.Buffer) {
 	buffer.WriteString("### Repository Structure ###\n")
 	buffer.WriteString(runCommand("ls", "-lah"))
 	if _, err := exec.LookPath("tree"); err == nil {
-		buffer.WriteString(runCommand("tree", "-L", "2", "-a"))
+		buffer.WriteString(runCommand("tree", "-L", "3", "-a"))
 	} else {
 		buffer.WriteString("(Tree command not available)\n")
 	}
@@ -67,7 +69,7 @@ func collectRepoStructure(buffer *bytes.Buffer) {
 func collectGitInfo(buffer *bytes.Buffer) {
 	buffer.WriteString("\n### Git Information ###\n")
 	buffer.WriteString("Recent Commits:\n")
-	buffer.WriteString(runCommand("git", "log", "--oneline", "-n", "5"))
+	buffer.WriteString(runCommand("git", "log", "--oneline", "-n", "10"))
 	buffer.WriteString("\nBranches:\n")
 	buffer.WriteString(runCommand("git", "branch", "-a"))
 	buffer.WriteString("\nRemote Repositories:\n")
@@ -76,21 +78,9 @@ func collectGitInfo(buffer *bytes.Buffer) {
 	buffer.WriteString(runCommand("git", "status", "--short"))
 }
 
-func collectConfigFiles(buffer *bytes.Buffer) {
-	buffer.WriteString("\n### Configuration and Important Files ###\n")
-	importantFiles := []string{
-		".gitignore", "README*", "LICENSE*", "Dockerfile*", ".env*",
-		"Makefile", "package.json", "go.mod", "requirements.txt",
-		"Gemfile", "composer.json", "build.gradle", "pom.xml",
-	}
-	for _, file := range importantFiles {
-		matches, err := filepath.Glob(filepath.Join(".", file))
-		if err == nil && len(matches) > 0 {
-			for _, match := range matches {
-				buffer.WriteString(match + "\n")
-			}
-		}
-	}
+func collectProjectAnalysis(buffer *bytes.Buffer) {
+	buffer.WriteString("\n")
+	buffer.WriteString(AnalyzeRepository())
 }
 
 func collectLargeFiles(buffer *bytes.Buffer) {
@@ -114,6 +104,51 @@ func collectProjectTypes(buffer *bytes.Buffer) {
 	for _, projectType := range projectTypes {
 		buffer.WriteString(fmt.Sprintf("- %s\n", projectType))
 	}
+}
+
+func collectTODOs(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### TODOs and FIXMEs ###\n")
+	todoCommand := `grep -r -n "TODO\|FIXME" --exclude-dir={.git,node_modules,vendor} .`
+	todos := runCommand("bash", "-c", todoCommand)
+	if todos != "" {
+		buffer.WriteString(todos)
+	} else {
+		buffer.WriteString("No TODOs or FIXMEs found.\n")
+	}
+}
+
+func collectSecurityAnalysis(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Security Analysis ###\n")
+
+	// Check for sensitive files
+	sensitiveFiles := []string{".env", "id_rsa", "id_dsa", "*.pem", "*.key"}
+	for _, pattern := range sensitiveFiles {
+		files, _ := filepath.Glob(pattern)
+		if len(files) > 0 {
+			buffer.WriteString(fmt.Sprintf("Warning: Potentially sensitive files found: %v\n", files))
+		}
+	}
+
+	// Check for outdated dependencies (example for Node.js projects)
+	if fileExists("package.json") {
+		buffer.WriteString(runCommand("npm", "audit"))
+	}
+}
+
+func collectPerformanceMetrics(buffer *bytes.Buffer) {
+	buffer.WriteString("\n### Performance Metrics ###\n")
+
+	// Repository size
+	buffer.WriteString("Repository size:\n")
+	buffer.WriteString(runCommand("du", "-sh", "."))
+
+	// Number of files
+	buffer.WriteString("\nTotal number of files:\n")
+	buffer.WriteString(runCommand("bash", "-c", "find . -type f | wc -l"))
+
+	// Lines of code (excluding .git directory)
+	buffer.WriteString("\nTotal lines of code:\n")
+	buffer.WriteString(runCommand("bash", "-c", "find . -name '*.go' -not -path './.git/*' | xargs wc -l"))
 }
 
 func runCommand(name string, arg ...string) string {
