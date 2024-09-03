@@ -1,66 +1,27 @@
 name: CD
 
 on:
-  release:
-    types: [created]
-  workflow_dispatch: # Allows manual triggering
-    inputs:
-      tag:
-        description: 'Tag for this release'
-        required: true
-        default: 'v0.0.0'
-  push: # Automatically triggers on push to main
+  push:
     branches:
-      - main
+      - main  # Triggers on every push to the main branch
+  release:
+    types: [created]  # Also triggers on release creation
+  workflow_dispatch:  # Allows manual triggering
 
 permissions:
-  contents: write
-  packages: write
+  contents: write  # Required for creating releases and uploading assets
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-
-      - name: Check Release
-        id: check_release
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const inputTag = "${{ github.event.inputs.tag }}";
-            const refTag = "${{ github.ref }}".split('/').pop();
-            const tag = inputTag || refTag;
-
-            try {
-              const release = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: tag
-              });
-              console.log(`Release found: ${release.data.html_url}`);
-              return { upload_url: release.data.upload_url, release_id: release.data.id };
-            } catch (error) {
-              if (error.status === 404) {
-                console.log('Release not found. Creating new release.');
-                const release = await github.rest.repos.createRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  tag_name: tag,
-                  name: `Release ${tag}`,
-                  draft: false,
-                  prerelease: false
-                });
-                return { upload_url: release.data.upload_url, release_id: release.data.id };
-              }
-              throw error;
-            }
 
       - name: Build
         run: |
@@ -74,41 +35,13 @@ jobs:
           sha256sum grabitsh-darwin-amd64 > grabitsh-darwin-amd64.sha256
           sha256sum grabitsh-windows-amd64.exe > grabitsh-windows-amd64.exe.sha256
 
-      - name: Upload Release Assets
-        uses: actions/github-script@v6
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const fs = require('fs').promises;
-            const { repo: { owner, repo } } = context;
-            const { upload_url, release_id } = ${{ steps.check_release.outputs.result }};
-
-            // Generate a unique identifier to avoid conflicts
-            const uniqueSuffix = Date.now();
-
-            const assets = [
-              { name: `grabitsh-linux-amd64-${uniqueSuffix}`, path: 'grabitsh-linux-amd64' },
-              { name: `grabitsh-darwin-amd64-${uniqueSuffix}`, path: 'grabitsh-darwin-amd64' },
-              { name: `grabitsh-windows-amd64-${uniqueSuffix}.exe`, path: 'grabitsh-windows-amd64.exe' },
-              { name: `grabitsh-linux-amd64-${uniqueSuffix}.sha256`, path: 'grabitsh-linux-amd64.sha256' },
-              { name: `grabitsh-darwin-amd64-${uniqueSuffix}.sha256`, path: 'grabitsh-darwin-amd64.sha256' },
-              { name: `grabitsh-windows-amd64-${uniqueSuffix}.exe.sha256`, path: 'grabitsh-windows-amd64.exe.sha256' }
-            ];
-
-            (async () => {
-              for (const asset of assets) {
-                try {
-                  const content = await fs.readFile(asset.path);
-                  await github.rest.repos.uploadReleaseAsset({
-                    owner,
-                    repo,
-                    release_id,
-                    name: asset.name,
-                    data: content
-                  });
-                  console.log(`Successfully uploaded asset ${asset.name}`);
-                } catch (error) {
-                  console.error(`Failed to upload asset ${asset.name}: ${error.message}`);
-                }
-              }
-            })();
+          files: |
+            grabitsh-linux-amd64
+            grabitsh-darwin-amd64
+            grabitsh-windows-amd64.exe
+            grabitsh-linux-amd64.sha256
+            grabitsh-darwin-amd64.sha256
+            grabitsh-windows-amd64.exe.sha256
