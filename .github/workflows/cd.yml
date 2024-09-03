@@ -3,11 +3,11 @@ name: CD
 on:
   push:
     branches:
-      - main  # Automatically triggers on every push to the main branch
-  workflow_dispatch:  # Allows manual triggering
+      - main
+  workflow_dispatch:
 
 permissions:
-  contents: write  # Required for creating releases and uploading assets
+  contents: write
 
 jobs:
   release:
@@ -17,9 +17,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          check-latest: true
+          cache: true
 
       - name: Build
         run: |
@@ -36,9 +38,10 @@ jobs:
       - name: Create Tag
         id: create_tag
         run: |
-          TAG="v1.0.$(date +'%s')"  # Generates a unique tag based on the current timestamp
-          git config --global user.email "dean@deanlofts.xyz"  # Set your GitHub email
-          git config --global user.name "loftwah"    # Set your GitHub username
+          TAG="v1.0.$(date +'%Y%m%d%H%M%S')"
+          echo "NEW_TAG=$TAG" >> $GITHUB_OUTPUT
+          git config --global user.email "dean@deanlofts.xyz"
+          git config --global user.name "loftwah"
           git tag $TAG
           git push origin $TAG
         env:
@@ -47,7 +50,12 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.create_tag.outputs.TAG }}  # Uses the newly created tag
+          tag_name: ${{ steps.create_tag.outputs.NEW_TAG }}
+          name: Release ${{ steps.create_tag.outputs.NEW_TAG }}
+          body: |
+            Automated release for version ${{ steps.create_tag.outputs.NEW_TAG }}
+            
+            Please refer to the commit history for changes in this release.
           files: |
             grabitsh-linux-amd64
             grabitsh-darwin-amd64
