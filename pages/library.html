@@ -54,23 +54,31 @@
               <strong>Generate a Custom Script Using AI:</strong> Copy the output from GRABIT.SH and use the prompt below to generate a tailored bash script with AI (ChatGPT, Claude, etc.):
               <h3 class="text-2xl font-bold text-gray-900 mt-8">Prompt for AI:</h3>
               <pre class="bg-gray-100 p-4 rounded mt-2 text-sm">
-You are an expert in DevOps and Bash scripting. Based on the provided output, I need you to generate a comprehensive Bash script that performs the following tasks:
+"Create an exhaustive, no-holds-barred bash script that will ruthlessly dissect ANY software project directory, regardless of language, framework, or structure. This script should:
 
-1. Analyzes the project structure and lists all directories and files in a clear, hierarchical format.
-2. Displays the contents of important configuration files such as .yml, .json, .rb, .js, and Docker-related files.
-3. Identifies large files and lists them with their file paths to provide insights into storage usage.
-4. Summarizes recent Git commits, branches, and statuses to give an overview of repository activity.
-5. Supports multiple output methods: terminal display, clipboard copy, or saving to a file, based on user preference.
-6. Checks for required dependencies and provides clear installation instructions if any are missing.
-7. Ensures the script is modular, well-commented, follows best practices, and is optimized for performance and readability.
+Recursively capture and output the ENTIRE content of EVERY single file in the project, regardless of type or size.
+Generate a complete, multi-level directory structure, going as deep as possible.
+If it's a git repo, extract EVERYTHING - full commit history, all branches, tags, stashes, and remotes.
+Identify and prioritize key project files (READMEs, configs, build scripts, etc.) but DO NOT ignore anything.
+Parse and output ALL dependency information from ANY kind of dependency management file it finds.
+Capture ALL environment variables and configurations, with a clear warning about sensitive data.
+Provide extensive file statistics - types, sizes, permissions, creation/modification dates, line counts, etc.
+Identify and fully output any script, task file, or executable regardless of language.
+Capture and display the content of ALL log files, not just snippets.
+Attempt to identify the project type and provide deep, relevant information based on common patterns and structures.
+Search for and output any comments in code files, prioritizing TODO, FIXME, and similar tags.
+If applicable, extract database schemas, migration scripts, and even sample data (with appropriate warnings).
+Identify and output any API endpoints, routes, or interface definitions it can find.
+Look for and display any testing or CI/CD configuration and scripts.
+Search for any documentation files (beyond just README) and output their content.
+Attempt to find and display any metrics, analytics, or monitoring configurations.
 
-Requirements:
-- The script should be modular and easy to understand, with functions clearly separated by task.
-- Include robust error handling to manage missing files, failed commands, or any unexpected conditions.
-- Ensure cross-platform compatibility for macOS and Linux environments, with appropriate commands for clipboard operations and other OS-specific tasks.
-- Avoid including specific examples in the output; focus on generating a general-purpose script that meets these criteria.
+The script should be merciless in its thoroughness, adaptable to ANY project structure, and include robust error handling. The output should be so comprehensive that it borders on information overload. The goal is to extract EVERY POSSIBLE DETAIL about the project, ensuring that someone (or an AI) could potentially recreate the entire project structure, understand its full history, and implement new features or debug issues without needing a single extra bit of context.
+This script should treat EVERY file as important and EVERY piece of information as potentially crucial. It should err on the side of producing too much information rather than too little.
 
-Ensure the final script adheres to these requirements and accurately reflects the provided output.</pre>
+[PASTE OUTPUT HERE]
+
+Based on this output, create the most comprehensive and adaptable bash script possible to gather this level of detail for any project."</pre>
             </li>
           </ol>
         </section>
