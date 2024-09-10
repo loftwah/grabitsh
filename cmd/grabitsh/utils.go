@@ -110,6 +110,7 @@ func fileExistsWithExtensions(baseName string, extensions []string) bool {
 }
 
 // Utility function to check and parse a file
+// Note: This function is currently unused. Consider removing it or using it in your package.
 func checkAndParseFile(filename string, parser func(string, *bytes.Buffer), buffer *bytes.Buffer) {
 	if fileExists(filename) {
 		buffer.WriteString(fmt.Sprintf("\nFound: %s\n", filename))
@@ -196,18 +197,24 @@ func parseK8sFiles(directory string, buffer *bytes.Buffer) {
 
 // Utility function to parse Helm chart files
 func parseHelmFiles(directory string, buffer *bytes.Buffer) {
-	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
 			buffer.WriteString(fmt.Sprintf("\nHelm chart file found: %s\n", path))
 			parseYAMLFile(path, buffer)
 		}
 		return nil
 	})
+	if err != nil {
+		buffer.WriteString(fmt.Sprintf("Error walking through Helm directory: %v\n", err))
+	}
 }
 
 // Utility function to parse directories (for cloud providers)
 func parseDirectoryContents(directory string, buffer *bytes.Buffer) {
-	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			buffer.WriteString(fmt.Sprintf("Error walking directory %s: %v\n", directory, err))
 			return nil
@@ -215,35 +222,40 @@ func parseDirectoryContents(directory string, buffer *bytes.Buffer) {
 		buffer.WriteString(fmt.Sprintf("\nDirectory: %s\n", path))
 		return nil
 	})
+	if err != nil {
+		buffer.WriteString(fmt.Sprintf("Error walking through directory %s: %v\n", directory, err))
+	}
 }
 
 // Utility function to parse Gemfile
-func parseGemfile(filename string, buffer *bytes.Buffer) {
+func parseGemfile(filename string, buffer *bytes.Buffer) error {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
 		buffer.WriteString(fmt.Sprintf("Error reading %s: %v\n", filename, err))
-		return
+		return err
 	}
 	buffer.WriteString("Gemfile contents:\n")
 	buffer.Write(fileContent)
+	return nil
 }
 
 // Utility function to parse package.json
-func parsePackageJSON(filename string, buffer *bytes.Buffer) {
+func parsePackageJSON(filename string, buffer *bytes.Buffer) error {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
 		buffer.WriteString(fmt.Sprintf("Error reading %s: %v\n", filename, err))
-		return
+		return err
 	}
 
 	var packageJSON map[string]interface{}
 	if err := json.Unmarshal(fileContent, &packageJSON); err != nil {
 		buffer.WriteString(fmt.Sprintf("Error parsing %s: %v\n", filename, err))
-		return
+		return err
 	}
 
 	buffer.WriteString(fmt.Sprintf("\nParsed %s JSON:\n", filename))
 	for key, value := range packageJSON {
 		buffer.WriteString(fmt.Sprintf("  %s: %v\n", key, value))
 	}
+	return nil
 }
