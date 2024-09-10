@@ -109,17 +109,6 @@ func fileExistsWithExtensions(baseName string, extensions []string) bool {
 	return false
 }
 
-// Utility function to check and parse a file
-// Note: This function is currently unused. Consider removing it or using it in your package.
-func checkAndParseFile(filename string, parser func(string, *bytes.Buffer), buffer *bytes.Buffer) {
-	if fileExists(filename) {
-		buffer.WriteString(fmt.Sprintf("\nFound: %s\n", filename))
-		parser(filename, buffer)
-	} else {
-		buffer.WriteString(fmt.Sprintf("No %s found.\n", filename))
-	}
-}
-
 // Utility function to parse Git config
 func parseGitConfig(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
