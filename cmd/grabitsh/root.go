@@ -221,36 +221,45 @@ Instructions:
 3. Use the information to answer questions about the repository, suggest improvements, or identify potential issues.
 4. Pay attention to sections like security analysis, performance metrics, and detected project types.
 
-Content of Chunk %d/%d:
+Content of Chunk %d/%d (Estimated %d tokens):
 
 `
 
 	for i, chunk := range chunks {
 		filename := fmt.Sprintf("grabitsh_chunk_%d.txt", i+1)
-		fullContent := fmt.Sprintf(preamble, i+1, totalChunks, i+1, totalChunks) + chunk
+		estimatedTokens := len(strings.Fields(chunk)) + len(chunk)/3 // Same estimation as in splitIntoChunks
+		fullContent := fmt.Sprintf(preamble, i+1, totalChunks, i+1, totalChunks, estimatedTokens) + chunk
 		if err := os.WriteFile(filename, []byte(fullContent), 0644); err != nil {
 			return fmt.Errorf("failed to write chunk %d: %v", i+1, err)
 		}
-		color.Green("Chunk %d/%d written to %s", i+1, totalChunks, filename)
+		color.Green("Chunk %d/%d written to %s (Estimated %d tokens)", i+1, totalChunks, filename, estimatedTokens)
 	}
 	return nil
 }
 
 func splitIntoChunks(content string, chunkSize int) []string {
 	var chunks []string
-	words := strings.Fields(content)
+	lines := strings.Split(content, "\n")
 	currentChunk := ""
-	wordCount := 0
+	tokenCount := 0
 	preambleSize := 250 // Approximate size of the preamble in tokens
 
-	for _, word := range words {
-		if wordCount+len(strings.Fields(word)) > chunkSize-preambleSize {
-			chunks = append(chunks, strings.TrimSpace(currentChunk))
-			currentChunk = ""
-			wordCount = 0
+	estimateTokens := func(s string) int {
+		// This is a rough estimation. Actual tokenization varies by model.
+		return len(strings.Fields(s)) + len(s)/3
+	}
+
+	for _, line := range lines {
+		lineTokens := estimateTokens(line)
+		if tokenCount+lineTokens > chunkSize-preambleSize {
+			if currentChunk != "" {
+				chunks = append(chunks, strings.TrimSpace(currentChunk))
+				currentChunk = ""
+				tokenCount = 0
+			}
 		}
-		currentChunk += word + " "
-		wordCount += len(strings.Fields(word))
+		currentChunk += line + "\n"
+		tokenCount += lineTokens
 	}
 
 	if currentChunk != "" {
