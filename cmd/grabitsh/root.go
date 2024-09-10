@@ -16,6 +16,7 @@ import (
 var (
 	outputMethod string
 	outputFile   string
+	chunkSize    int
 	rootCmd      *cobra.Command
 )
 
@@ -23,12 +24,13 @@ func init() {
 	rootCmd = &cobra.Command{
 		Use:   "grabitsh",
 		Short: "Grabit.sh gathers useful information from a Git repository",
-		Long:  `Grabit.sh simplifies working with Git repositories by gathering useful information and outputting it to stdout, a file, or the clipboard.`,
+		Long:  `Grabit.sh simplifies working with Git repositories by gathering useful information and outputting it to stdout, a file, the clipboard, or LLM-friendly chunks.`,
 		Run:   runGrabit,
 	}
 
-	rootCmd.Flags().StringVarP(&outputMethod, "output", "o", "stdout", "Output method: stdout, clipboard, or file")
+	rootCmd.Flags().StringVarP(&outputMethod, "output", "o", "stdout", "Output method: stdout, clipboard, file, or llm-chunks")
 	rootCmd.Flags().StringVarP(&outputFile, "file", "f", "", "Output file path (required if output method is file)")
+	rootCmd.Flags().IntVarP(&chunkSize, "chunk-size", "c", 100000, "Token size for LLM chunks (default 100000)")
 
 	rootCmd.AddCommand(serveCmd)
 }
@@ -194,7 +196,66 @@ func finalizeOutput(content string) {
 		} else {
 			color.Green("Output written to file: %s", outputFile)
 		}
+	case "llm-chunks":
+		if err := writeChunks(content); err != nil {
+			color.Red("Failed to write LLM chunks: %v", err)
+		} else {
+			color.Green("LLM chunks written successfully.")
+		}
 	default:
-		color.Red("Invalid output method. Choose stdout, clipboard, or file.")
+		color.Red("Invalid output method. Choose stdout, clipboard, file, or llm-chunks.")
 	}
+}
+
+func writeChunks(content string) error {
+	chunks := splitIntoChunks(content, chunkSize)
+	totalChunks := len(chunks)
+
+	preamble := `This is part %d of %d of the output from Grabit.sh, a tool that analyzes Git repositories.
+
+Purpose: This output provides a comprehensive analysis of a Git repository, including its structure, configuration, dependencies, and potential issues. Use this information to understand the project, identify areas for improvement, and make informed decisions about the codebase.
+
+Instructions:
+1. Read through the information provided in this chunk.
+2. If this is not the final chunk, wait for the next one before drawing conclusions.
+3. Use the information to answer questions about the repository, suggest improvements, or identify potential issues.
+4. Pay attention to sections like security analysis, performance metrics, and detected project types.
+
+Content of Chunk %d/%d:
+
+`
+
+	for i, chunk := range chunks {
+		filename := fmt.Sprintf("grabitsh_chunk_%d.txt", i+1)
+		fullContent := fmt.Sprintf(preamble, i+1, totalChunks, i+1, totalChunks) + chunk
+		if err := os.WriteFile(filename, []byte(fullContent), 0644); err != nil {
+			return fmt.Errorf("failed to write chunk %d: %v", i+1, err)
+		}
+		color.Green("Chunk %d/%d written to %s", i+1, totalChunks, filename)
+	}
+	return nil
+}
+
+func splitIntoChunks(content string, chunkSize int) []string {
+	var chunks []string
+	words := strings.Fields(content)
+	currentChunk := ""
+	wordCount := 0
+	preambleSize := 250 // Approximate size of the preamble in tokens
+
+	for _, word := range words {
+		if wordCount+len(strings.Fields(word)) > chunkSize-preambleSize {
+			chunks = append(chunks, strings.TrimSpace(currentChunk))
+			currentChunk = ""
+			wordCount = 0
+		}
+		currentChunk += word + " "
+		wordCount += len(strings.Fields(word))
+	}
+
+	if currentChunk != "" {
+		chunks = append(chunks, strings.TrimSpace(currentChunk))
+	}
+
+	return chunks
 }

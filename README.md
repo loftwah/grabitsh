@@ -15,6 +15,7 @@ Grabit.sh is a powerful command-line tool designed to quickly gather and summari
 - File type summary
 - Recently modified files list
 - Project type detection
+- LLM-friendly output chunks for easy integration with AI models
 
 ## Installation
 
@@ -111,6 +112,7 @@ Replace `<output_method>` with one of the following options:
 - `stdout`: Display the output in the terminal (default)
 - `clipboard`: Copy the output to your clipboard
 - `file`: Save the output to a file (use the `-f` flag to specify the file path)
+- `llm-chunks`: Generate LLM-friendly chunks of the output (new feature)
 
 ### Examples
 
@@ -131,6 +133,33 @@ Replace `<output_method>` with one of the following options:
    ```bash
    grabitsh --output file -f output.txt
    ```
+
+4. Generate LLM-friendly chunks:
+
+   ```bash
+   grabitsh --output llm-chunks
+   ```
+
+   This will create multiple text files, each containing a portion of the output with a preamble suitable for use with Large Language Models.
+
+5. Customize chunk size for LLM output:
+
+   ```bash
+   grabitsh --output llm-chunks --chunk-size 50000
+   ```
+
+   This sets the chunk size to 50,000 tokens. The default is 100,000 tokens.
+
+### LLM-Chunks Feature
+
+The LLM-chunks output method is designed to create AI-friendly chunks of the Grabit.sh output. Each chunk includes a preamble that provides context about the tool, its purpose, and instructions for the AI model. This feature is particularly useful when you want to analyze the output using a Large Language Model or other AI tools.
+
+Key points about LLM-chunks:
+
+- Each chunk is saved as a separate text file (`grabitsh_chunk_1.txt`, `grabitsh_chunk_2.txt`, etc.).
+- The default chunk size is 100,000 tokens, which can be customized using the `--chunk-size` flag.
+- The preamble in each chunk helps the AI understand the context and purpose of the information.
+- This feature makes it easy to feed the Grabit.sh output into AI models for further analysis or to generate insights about the repository.
 
 ## Web Server
 
