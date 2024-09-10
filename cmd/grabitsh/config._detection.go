@@ -2,6 +2,7 @@ package grabitsh
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 )
 
@@ -13,6 +14,15 @@ func DetectImportantFiles(buffer *bytes.Buffer) {
 	checkAndParseIfExists := func(filename string, parser func(string, *bytes.Buffer), buffer *bytes.Buffer) {
 		if _, err := os.Stat(filename); err == nil {
 			parser(filename, buffer)
+		}
+	}
+
+	// Helper function for parsers that return an error
+	checkAndParseIfExistsWithError := func(filename string, parser func(string, *bytes.Buffer) error, buffer *bytes.Buffer) {
+		if _, err := os.Stat(filename); err == nil {
+			if err := parser(filename, buffer); err != nil {
+				buffer.WriteString(fmt.Sprintf("Error parsing %s: %v\n", filename, err))
+			}
 		}
 	}
 
@@ -71,7 +81,7 @@ func DetectImportantFiles(buffer *bytes.Buffer) {
 	checkAndParseIfExists("Pulumi.yaml", parseYAMLFile, buffer)
 
 	// 8. Language-Specific
-	checkAndParseIfExists("Gemfile", parseGemfile, buffer)
+	checkAndParseIfExistsWithError("Gemfile", parseGemfile, buffer)
 	checkAndParseIfExists(".ruby-version", parseBasicTextFile, buffer)
 	checkAndParseIfExists("config/application.rb", parseBasicTextFile, buffer)
 
@@ -80,7 +90,7 @@ func DetectImportantFiles(buffer *bytes.Buffer) {
 	checkAndParseIfExists("setup.py", parseBasicTextFile, buffer)
 
 	// JavaScript / TypeScript
-	checkAndParseIfExists("package.json", parsePackageJSON, buffer)
+	checkAndParseIfExistsWithError("package.json", parsePackageJSON, buffer)
 	checkAndParseIfExists("tsconfig.json", parseJSONFile, buffer)
 
 	// Go
