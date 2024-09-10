@@ -1,6 +1,7 @@
 package grabitsh
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,8 +10,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 )
-
-const maxContentLength = 1000 // Maximum number of characters to display for file contents
 
 func DetectProjectTypes() []string {
 	var projectTypes []string
@@ -31,74 +30,92 @@ func DetectProjectTypes() []string {
 		}
 	}
 
+	// Ruby on Rails detection
 	if fileExists("config/application.rb") && dirExists("app") && dirExists("config") {
 		projectTypes = append(projectTypes, "Ruby on Rails project")
 	}
 
+	// Laravel detection
 	if fileExists("artisan") && dirExists("app") && dirExists("public") {
 		projectTypes = append(projectTypes, "Laravel (PHP) project")
 	}
 
+	// Django detection
 	if fileExists("manage.py") && dirExists("templates") {
 		projectTypes = append(projectTypes, "Django (Python) project")
 	}
 
+	// Flask/FastAPI detection
 	if fileExists("app.py") || fileExists("wsgi.py") {
 		projectTypes = append(projectTypes, "Flask/FastAPI (Python) project")
 	}
 
+	// Vue.js detection
 	if fileExistsWithExtensions("vue.config", []string{".js", ".ts"}) {
 		projectTypes = append(projectTypes, "Vue.js project")
 	}
 
+	// Angular detection
 	if fileExists("angular.json") {
 		projectTypes = append(projectTypes, "Angular project")
 	}
 
+	// .NET Core detection
 	if fileExists("Program.cs") && dirExists("bin") && dirExists("obj") {
 		projectTypes = append(projectTypes, ".NET Core project")
 	}
 
+	// Java Spring Boot detection
 	if fileExists("pom.xml") && dirExists("src/main/java") {
 		projectTypes = append(projectTypes, "Java Spring Boot project")
 	}
 
+	// Go project detection
 	if fileExists("go.mod") {
 		projectTypes = append(projectTypes, "Go project")
 	}
 
+	// Terraform detection
 	if dirExists("terraform") || fileExists("main.tf") {
 		projectTypes = append(projectTypes, "Terraform project")
 	}
 
+	// Docker Compose detection
 	if fileExistsWithExtensions("docker-compose", []string{".yml", ".yaml"}) || fileExists("compose.yml") || fileExists("compose.yaml") {
 		projectTypes = append(projectTypes, "Docker Compose project")
 	}
 
+	// Docker project detection
 	if fileExists("Dockerfile") {
 		projectTypes = append(projectTypes, "Docker project")
 	}
 
+	// Vagrant detection
 	if fileExists("Vagrantfile") {
 		projectTypes = append(projectTypes, "Vagrant project")
 	}
 
+	// Ansible detection
 	if fileExists("ansible.cfg") || dirExists("roles") {
 		projectTypes = append(projectTypes, "Ansible project")
 	}
 
+	// Jenkins detection
 	if fileExists("Jenkinsfile") {
 		projectTypes = append(projectTypes, "Jenkins pipeline")
 	}
 
+	// Google Cloud Build detection
 	if fileExists("cloudbuild.yaml") || fileExists("cloudbuild.yml") {
 		projectTypes = append(projectTypes, "Google Cloud Build project")
 	}
 
+	// Serverless Framework detection
 	if fileExists("serverless.yml") || fileExists("serverless.yaml") {
 		projectTypes = append(projectTypes, "Serverless Framework project")
 	}
 
+	// Helm Chart detection
 	if fileExists("Chart.yaml") {
 		projectTypes = append(projectTypes, "Helm Chart")
 	}
@@ -133,7 +150,7 @@ func analyzeDirectory(dir string, output *strings.Builder, depth int, maxDepth i
 		return
 	}
 
-	files, err := os.ReadDir(dir) // Updated from ioutil.ReadDir to os.ReadDir
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		fmt.Fprintf(output, "Error reading directory %s: %v\n", dir, err)
 		return
@@ -143,14 +160,12 @@ func analyzeDirectory(dir string, output *strings.Builder, depth int, maxDepth i
 		indent := strings.Repeat("  ", depth)
 		path := filepath.Join(dir, file.Name())
 
+		// Exclude .git directory and irrelevant files
+		if file.Name() == ".git" || shouldExcludeDir(file.Name()) {
+			continue
+		}
+
 		if file.IsDir() {
-			if file.Name() == ".git" {
-				fmt.Fprintf(output, "%s📁 %s (Git repository)\n", indent, file.Name())
-				continue
-			}
-			if shouldExcludeDir(file.Name()) {
-				continue
-			}
 			fmt.Fprintf(output, "%s📁 %s\n", indent, file.Name())
 			if depth < maxDepth {
 				analyzeDirectory(path, output, depth+1, maxDepth)
@@ -162,13 +177,52 @@ func analyzeDirectory(dir string, output *strings.Builder, depth int, maxDepth i
 }
 
 func shouldExcludeDir(name string) bool {
-	excludeDirs := []string{"node_modules", "vendor", "dist", "build"}
+	excludeDirs := []string{"node_modules", "vendor", "dist", "build", ".git/objects", ".git/logs"}
 	for _, dir := range excludeDirs {
 		if name == dir {
 			return true
 		}
 	}
 	return false
+}
+
+// Function to analyze .git directory
+func analyzeGitDir(output *bytes.Buffer) {
+	if dirExists(".git") {
+		output.WriteString("\n### .git Directory Analysis ###\n")
+
+		// Analyze .git/config
+		if fileExists(".git/config") {
+			output.WriteString("Git configuration:\n")
+			content, _ := os.ReadFile(".git/config")
+			output.WriteString(truncateContent(string(content)))
+			output.WriteString("\n\n")
+		}
+
+		// Analyze .git/refs/heads (Local branches)
+		output.WriteString("Local branches:\n")
+		branchFiles, _ := filepath.Glob(".git/refs/heads/*")
+		for _, branch := range branchFiles {
+			output.WriteString(fmt.Sprintf("- %s\n", filepath.Base(branch)))
+		}
+		output.WriteString("\n")
+
+		// Analyze .git/refs/remotes (Remote branches)
+		output.WriteString("Remote branches:\n")
+		remoteBranchFiles, _ := filepath.Glob(".git/refs/remotes/*/*")
+		for _, remoteBranch := range remoteBranchFiles {
+			output.WriteString(fmt.Sprintf("- %s\n", filepath.Base(remoteBranch)))
+		}
+		output.WriteString("\n")
+
+		// Analyze packed-refs (if exists)
+		if fileExists(".git/packed-refs") {
+			output.WriteString("Packed refs:\n")
+			content, _ := os.ReadFile(".git/packed-refs")
+			output.WriteString(truncateContent(string(content)))
+			output.WriteString("\n\n")
+		}
+	}
 }
 
 func analyzeGitHubDir(output *strings.Builder) {
@@ -178,7 +232,7 @@ func analyzeGitHubDir(output *strings.Builder) {
 			output.WriteString("GitHub Actions workflows found:\n")
 			workflows, _ := filepath.Glob(".github/workflows/*.yml")
 			for _, workflow := range workflows {
-				content, err := os.ReadFile(workflow) // Updated from ioutil.ReadFile to os.ReadFile
+				content, err := os.ReadFile(workflow)
 				if err == nil {
 					output.WriteString(fmt.Sprintf("Workflow: %s\n", filepath.Base(workflow)))
 					output.WriteString(truncateContent(string(content)))
@@ -211,7 +265,7 @@ func analyzeImportantDirs(output *strings.Builder) {
 		output.WriteString("\n### Terraform Files ###\n")
 		tfFiles, _ := filepath.Glob("terraform/*.tf")
 		for _, file := range tfFiles {
-			content, err := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
+			content, err := os.ReadFile(file)
 			if err == nil {
 				output.WriteString(fmt.Sprintf("File: %s\n", filepath.Base(file)))
 				output.WriteString(truncateContent(string(content)))
@@ -225,16 +279,14 @@ func analyzeImportantFiles(output *strings.Builder) {
 	importantFiles := []string{
 		".dockerignore", ".gitignore", "Dockerfile",
 		"Procfile", "Rakefile", "Makefile", ".env", "package.json",
-		"Gemfile", "requirements.txt",
-		"go.mod", "go.sum", "main.go", "README.md", "LICENSE",
-		"Vagrantfile", "ansible.cfg", "Jenkinsfile", "cloudbuild.yaml",
-		"serverless.yml", "Chart.yaml",
+		"Gemfile", "requirements.txt", "go.mod", "go.sum", "main.go", "README.md", "LICENSE",
+		"Vagrantfile", "ansible.cfg", "Jenkinsfile", "cloudbuild.yaml", "serverless.yml", "Chart.yaml",
 	}
 
 	output.WriteString("\n### Important Files ###\n")
 	for _, file := range importantFiles {
 		if fileExists(file) {
-			content, err := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
+			content, err := os.ReadFile(file)
 			if err == nil {
 				output.WriteString(fmt.Sprintf("File: %s\n", file))
 				if file == ".env" {
@@ -247,7 +299,6 @@ func analyzeImportantFiles(output *strings.Builder) {
 		}
 	}
 
-	// Check for files with multiple possible extensions
 	multiExtensionFiles := map[string][]string{
 		"docker-compose": {".yml", ".yaml"},
 		"compose":        {".yml", ".yaml"},
@@ -260,13 +311,13 @@ func analyzeImportantFiles(output *strings.Builder) {
 		for _, ext := range extensions {
 			fileName := baseName + ext
 			if fileExists(fileName) {
-				content, err := os.ReadFile(fileName) // Updated from ioutil.ReadFile to os.ReadFile
+				content, err := os.ReadFile(fileName)
 				if err == nil {
 					output.WriteString(fmt.Sprintf("File: %s\n", fileName))
 					output.WriteString(truncateContent(string(content)))
 					output.WriteString("\n\n")
 				}
-				break // We only need to find one matching file
+				break
 			}
 		}
 	}
@@ -277,14 +328,14 @@ func analyzeGoProject(output *strings.Builder) {
 		output.WriteString("\n### Go Project Analysis ###\n")
 
 		// Analyze go.mod
-		modContent, _ := os.ReadFile("go.mod") // Updated from ioutil.ReadFile to os.ReadFile
+		modContent, _ := os.ReadFile("go.mod")
 		output.WriteString("go.mod contents:\n")
 		output.WriteString(truncateContent(string(modContent)))
 		output.WriteString("\n\n")
 
 		// Analyze main.go if it exists
 		if fileExists("main.go") {
-			mainContent, _ := os.ReadFile("main.go") // Updated from ioutil.ReadFile to os.ReadFile
+			mainContent, _ := os.ReadFile("main.go")
 			output.WriteString("main.go contents:\n")
 			output.WriteString(truncateContent(string(mainContent)))
 			output.WriteString("\n\n")
@@ -312,7 +363,7 @@ func analyzeDependencies(output *strings.Builder) {
 
 	// Analyze package.json for Node.js projects
 	if fileExists("package.json") {
-		content, _ := os.ReadFile("package.json") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile("package.json")
 		var packageJSON map[string]interface{}
 		if err := json.Unmarshal(content, &packageJSON); err == nil {
 			if deps, ok := packageJSON["dependencies"].(map[string]interface{}); ok {
@@ -326,7 +377,7 @@ func analyzeDependencies(output *strings.Builder) {
 
 	// Analyze go.mod for Go projects
 	if fileExists("go.mod") {
-		content, _ := os.ReadFile("go.mod") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile("go.mod")
 		output.WriteString("Go Dependencies:\n")
 		lines := strings.Split(string(content), "\n")
 		for _, line := range lines {
@@ -342,7 +393,7 @@ func analyzeConfiguration(output *strings.Builder) {
 
 	// Analyze .env file
 	if fileExists(".env") {
-		content, _ := os.ReadFile(".env") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile(".env")
 		output.WriteString("Environment variables (sanitized):\n")
 		output.WriteString(sanitizeEnvFile(string(content)))
 		output.WriteString("\n")
@@ -362,7 +413,7 @@ func analyzeConfiguration(output *strings.Builder) {
 	yamlFiles = append(yamlFiles, ymlFiles...)
 
 	for _, file := range yamlFiles {
-		content, err := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
+		content, err := os.ReadFile(file)
 		if err != nil {
 			output.WriteString(fmt.Sprintf("Error reading file %s: %v\n", file, err))
 			continue
@@ -382,14 +433,14 @@ func analyzeDocumentation(output *strings.Builder) {
 	output.WriteString("\n### Documentation Analysis ###\n")
 
 	if fileExists("README.md") {
-		content, _ := os.ReadFile("README.md") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile("README.md")
 		output.WriteString("README.md contents:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
 	}
 
 	if fileExists("LICENSE") {
-		content, _ := os.ReadFile("LICENSE") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile("LICENSE")
 		output.WriteString("LICENSE contents:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -398,7 +449,7 @@ func analyzeDocumentation(output *strings.Builder) {
 	// Check for other documentation files
 	docFiles, _ := filepath.Glob("docs/*.md")
 	for _, file := range docFiles {
-		content, _ := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile(file)
 		output.WriteString(fmt.Sprintf("Documentation file: %s\n", file))
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -409,7 +460,7 @@ func analyzeContainerization(output *strings.Builder) {
 	output.WriteString("\n### Containerization Analysis ###\n")
 
 	if fileExists("Dockerfile") {
-		content, _ := os.ReadFile("Dockerfile") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile("Dockerfile")
 		output.WriteString("Dockerfile found:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -418,11 +469,11 @@ func analyzeContainerization(output *strings.Builder) {
 	composeFiles := []string{"docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"}
 	for _, file := range composeFiles {
 		if fileExists(file) {
-			content, _ := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
+			content, _ := os.ReadFile(file)
 			output.WriteString(fmt.Sprintf("%s found:\n", file))
 			output.WriteString(truncateContent(string(content)))
 			output.WriteString("\n\n")
-			break // We only need to find one compose file
+			break
 		}
 	}
 }
@@ -434,7 +485,7 @@ func analyzeInfrastructureAsCode(output *strings.Builder) {
 		output.WriteString("Terraform configuration found.\n")
 		tfFiles, _ := filepath.Glob("terraform/*.tf")
 		for _, file := range tfFiles {
-			content, _ := os.ReadFile(file) // Updated from ioutil.ReadFile to os.ReadFile
+			content, _ := os.ReadFile(file)
 			output.WriteString(fmt.Sprintf("File: %s\n", filepath.Base(file)))
 			output.WriteString(truncateContent(string(content)))
 			output.WriteString("\n\n")
@@ -443,12 +494,10 @@ func analyzeInfrastructureAsCode(output *strings.Builder) {
 
 	if fileExists("serverless.yml") || fileExists("serverless.yaml") {
 		output.WriteString("Serverless Framework configuration found.\n")
-		// Add analysis of serverless config here
 	}
 
 	if fileExists("Chart.yaml") {
 		output.WriteString("Helm Chart found.\n")
-		// Add analysis of Helm Chart here
 	}
 }
 
@@ -456,7 +505,7 @@ func analyzeCICDPipelines(output *strings.Builder) {
 	output.WriteString("\n### CI/CD Pipeline Analysis ###\n")
 
 	if fileExists("Jenkinsfile") {
-		content, _ := os.ReadFile("Jenkinsfile") // Updated from ioutil.ReadFile to os.ReadFile
+		content, _ := os.ReadFile("Jenkinsfile")
 		output.WriteString("Jenkinsfile found:\n")
 		output.WriteString(truncateContent(string(content)))
 		output.WriteString("\n\n")
@@ -464,48 +513,5 @@ func analyzeCICDPipelines(output *strings.Builder) {
 
 	if fileExists("cloudbuild.yaml") || fileExists("cloudbuild.yml") {
 		output.WriteString("Google Cloud Build configuration found.\n")
-		// Add analysis of Cloud Build config here
 	}
-
-	// Add checks for other CI/CD configurations (GitLab CI, CircleCI, etc.)
-}
-
-func truncateContent(content string) string {
-	if len(content) > maxContentLength {
-		return content[:maxContentLength] + "...\n(content truncated)"
-	}
-	return content
-}
-
-func sanitizeEnvFile(content string) string {
-	lines := strings.Split(content, "\n")
-	var sanitized []string
-	for _, line := range lines {
-		if strings.Contains(line, "=") {
-			parts := strings.SplitN(line, "=", 2)
-			sanitized = append(sanitized, parts[0]+"=<value>")
-		} else {
-			sanitized = append(sanitized, line)
-		}
-	}
-	return strings.Join(sanitized, "\n")
-}
-
-func fileExistsWithExtensions(baseName string, extensions []string) bool {
-	for _, ext := range extensions {
-		if fileExists(baseName + ext) {
-			return true
-		}
-	}
-	return false
-}
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	return err == nil && !info.IsDir()
-}
-
-func dirExists(dirname string) bool {
-	info, err := os.Stat(dirname)
-	return err == nil && info.IsDir()
 }

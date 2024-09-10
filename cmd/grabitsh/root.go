@@ -43,6 +43,7 @@ func runGrabit(cmd *cobra.Command, args []string) {
 	// Collect all sections
 	collectRepoStructure(&outputBuffer)
 	collectGitInfo(&outputBuffer)
+	analyzeGitDir(&outputBuffer)
 	collectProjectAnalysis(&outputBuffer)
 	collectLargeFiles(&outputBuffer)
 	collectFileTypeSummary(&outputBuffer)
@@ -51,6 +52,7 @@ func runGrabit(cmd *cobra.Command, args []string) {
 	collectTODOs(&outputBuffer)
 	collectSecurityAnalysis(&outputBuffer)
 	collectPerformanceMetrics(&outputBuffer)
+	DetectImportantFiles(&outputBuffer)
 
 	// Output results
 	finalizeOutput(outputBuffer.String())
@@ -58,10 +60,14 @@ func runGrabit(cmd *cobra.Command, args []string) {
 
 func collectRepoStructure(buffer *bytes.Buffer) {
 	buffer.WriteString("### Repository Structure ###\n")
-	buffer.WriteString(runCommand("ls", "-lah"))
+
+	excludeDirs := []string{"node_modules", ".git/objects", ".git/logs", ".git/packs"}
+
+	// Use the tree command or ls based on availability and exclude the directories
 	if _, err := exec.LookPath("tree"); err == nil {
-		buffer.WriteString(runCommand("tree", "-L", "3", "-a"))
+		buffer.WriteString(runCommand("tree", "-L", "3", "-a", "--prune", "-I", strings.Join(excludeDirs, "|")))
 	} else {
+		buffer.WriteString(runCommand("ls", "-lah"))
 		buffer.WriteString("(Tree command not available)\n")
 	}
 }
@@ -80,7 +86,7 @@ func collectGitInfo(buffer *bytes.Buffer) {
 
 func collectProjectAnalysis(buffer *bytes.Buffer) {
 	buffer.WriteString("\n")
-	buffer.WriteString(AnalyzeRepository())
+	buffer.WriteString(AnalyzeRepository()) // Calls analysis from project_detection.go
 }
 
 func collectLargeFiles(buffer *bytes.Buffer) {
@@ -108,12 +114,12 @@ func collectProjectTypes(buffer *bytes.Buffer) {
 
 func collectTODOs(buffer *bytes.Buffer) {
 	buffer.WriteString("\n### TODOs and FIXMEs ###\n")
-	todoCommand := `grep -r -n "TODO\|FIXME" --exclude-dir={.git,node_modules,vendor} .`
+	todoCommand := `grep -r -n --binary-files=without-match "TODO\|FIXME" --exclude-dir={.git,node_modules,vendor} .`
 	todos := runCommand("bash", "-c", todoCommand)
-	if todos != "" {
-		buffer.WriteString(todos)
-	} else {
+	if todos == "" {
 		buffer.WriteString("No TODOs or FIXMEs found.\n")
+	} else {
+		buffer.WriteString(todos)
 	}
 }
 
@@ -125,7 +131,15 @@ func collectSecurityAnalysis(buffer *bytes.Buffer) {
 	for _, pattern := range sensitiveFiles {
 		files, _ := filepath.Glob(pattern)
 		if len(files) > 0 {
-			buffer.WriteString(fmt.Sprintf("Warning: Potentially sensitive files found: %v\n", files))
+			for _, file := range files {
+				if file == ".env" {
+					// Output .env file as sanitized example
+					content, _ := os.ReadFile(file)
+					buffer.WriteString(fmt.Sprintf("Sanitized .env Example:\n%s\n", sanitizeEnvFile(string(content))))
+				} else {
+					buffer.WriteString(fmt.Sprintf("Warning: Sensitive file detected: %s\n", file))
+				}
+			}
 		}
 	}
 
