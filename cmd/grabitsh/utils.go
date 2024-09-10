@@ -131,13 +131,19 @@ func parseGitConfig(filename string, buffer *bytes.Buffer) {
 
 // Utility function to parse GitHub Actions workflows
 func parseGithubActionsWorkflows(directory string, buffer *bytes.Buffer) {
-	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if strings.HasSuffix(info.Name(), ".yml") || strings.HasSuffix(info.Name(), ".yaml") {
 			buffer.WriteString(fmt.Sprintf("\nParsing GitHub Actions workflow: %s\n", path))
 			parseYAMLFile(path, buffer)
 		}
 		return nil
 	})
+	if err != nil {
+		buffer.WriteString(fmt.Sprintf("Error walking through directory %s: %v\n", directory, err))
+	}
 }
 
 // Utility function to parse Dockerfile
@@ -156,24 +162,36 @@ func parseDockerfile(filename string, buffer *bytes.Buffer) {
 
 // Utility function to parse Docker directories
 func parseDockerDir(directory string, buffer *bytes.Buffer) {
-	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") || strings.HasSuffix(path, "Dockerfile") {
 			buffer.WriteString(fmt.Sprintf("\nDocker-related file found: %s\n", path))
 			parseYAMLFile(path, buffer)
 		}
 		return nil
 	})
+	if err != nil {
+		buffer.WriteString(fmt.Sprintf("Error walking through Docker directory: %v\n", err))
+	}
 }
 
 // Utility function to parse Kubernetes files
 func parseK8sFiles(directory string, buffer *bytes.Buffer) {
-	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
 			buffer.WriteString(fmt.Sprintf("\nKubernetes file found: %s\n", path))
 			parseYAMLFile(path, buffer)
 		}
 		return nil
 	})
+	if err != nil {
+		buffer.WriteString(fmt.Sprintf("Error walking through Kubernetes directory: %v\n", err))
+	}
 }
 
 // Utility function to parse Helm chart files
