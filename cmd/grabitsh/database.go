@@ -18,14 +18,33 @@ func analyzeDatabaseUsage() DatabaseInfo {
 
 	dbInfo.MigrationsPresent = dirExists("migrations") || dirExists("db/migrate")
 
-	dbConfigFiles := []string{"config/database.yml", "knexfile.js", "ormconfig.json", "sequelize.config.js"}
+	dbConfigFiles := []string{
+		"config/database.yml",
+		"knexfile.js",
+		"ormconfig.json",
+		"sequelize.config.js",
+		"database.json",
+		"dbconfig.json",
+		"mongo.config.js",
+		"redis.config.js",
+	}
+
 	for _, file := range dbConfigFiles {
 		if fileExists(file) {
 			dbInfo.ConfigFiles = append(dbInfo.ConfigFiles, file)
 		}
 	}
 
-	ormFiles := []string{"models.py", "*.model.ts", "*.rb", "entity/*.go", "*.entity.ts"}
+	ormFiles := []string{
+		"models.py",
+		"*.model.ts",
+		"*.rb",
+		"entity/*.go",
+		"*.entity.ts",
+		"models/*.java",
+		"entities/*.cs",
+	}
+
 	for _, pattern := range ormFiles {
 		files, _ := filepath.Glob(pattern)
 		if len(files) > 0 {
@@ -36,12 +55,18 @@ func analyzeDatabaseUsage() DatabaseInfo {
 
 	// Detect database types
 	dbTypes := map[string][]string{
-		"PostgreSQL": {"postgres", "postgresql"},
-		"MySQL":      {"mysql"},
-		"SQLite":     {"sqlite"},
-		"MongoDB":    {"mongodb", "mongo"},
-		"Redis":      {"redis"},
-		"Cassandra":  {"cassandra"},
+		"PostgreSQL": {"postgres", "postgresql", "pg"},
+		"MySQL":      {"mysql", "mariadb"},
+		"SQLite":     {"sqlite", "sqlite3"},
+		"MongoDB":    {"mongodb", "mongo", "mongoose"},
+		"Redis":      {"redis", "rediss"},
+		"Cassandra":  {"cassandra", "cql"},
+		"Oracle":     {"oracle", "orcl"},
+		"SQL Server": {"sqlserver", "mssql"},
+		"DB2":        {"db2", "ibm"},
+		"Couchbase":  {"couchbase"},
+		"Firebird":   {"firebird"},
+		"ClickHouse": {"clickhouse"},
 	}
 
 	for dbType, keywords := range dbTypes {
