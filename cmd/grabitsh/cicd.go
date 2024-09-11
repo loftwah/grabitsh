@@ -1,18 +1,24 @@
 package grabitsh
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-type CICDSystem struct {
-	Name  string   `json:"name"`
-	File  string   `json:"file"`
-	Steps []string `json:"steps"`
+type Step struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
-func analyzeCICDWorkflows() []CICDSystem {
+type CICDSystem struct {
+	Name  string `json:"name"`
+	File  string `json:"file"`
+	Steps []Step `json:"steps"`
+}
+
+func analyzeCICDWorkflows() ([]CICDSystem, error) {
 	cicdSystems := []struct {
 		name  string
 		files []string
@@ -33,13 +39,19 @@ func analyzeCICDWorkflows() []CICDSystem {
 
 	for _, system := range cicdSystems {
 		for _, filePattern := range system.files {
-			files, _ := filepath.Glob(filePattern)
+			files, err := filepath.Glob(filePattern)
+			if err != nil {
+				return nil, fmt.Errorf("error globbing files: %w", err)
+			}
 			for _, file := range files {
 				content, err := os.ReadFile(file)
 				if err != nil {
-					continue
+					return nil, fmt.Errorf("error reading file %s: %w", file, err)
 				}
-				steps := analyzeCICDSteps(string(content))
+				steps, err := analyzeCICDSteps(string(content))
+				if err != nil {
+					return nil, fmt.Errorf("error analyzing steps in file %s: %w", file, err)
+				}
 				results = append(results, CICDSystem{
 					Name:  system.name,
 					File:  filepath.Base(file),
@@ -49,33 +61,33 @@ func analyzeCICDWorkflows() []CICDSystem {
 		}
 	}
 
-	return results
+	return results, nil
 }
 
-func analyzeCICDSteps(content string) []string {
-	var steps []string
+func analyzeCICDSteps(content string) ([]Step, error) {
+	var steps []Step
 
 	if strings.Contains(content, "npm test") || strings.Contains(content, "yarn test") {
-		steps = append(steps, "Testing")
+		steps = append(steps, Step{Name: "Testing", Description: "Runs tests"})
 	}
 	if strings.Contains(content, "npm run build") || strings.Contains(content, "yarn build") {
-		steps = append(steps, "Build")
+		steps = append(steps, Step{Name: "Build", Description: "Builds the project"})
 	}
 	if strings.Contains(content, "docker build") || strings.Contains(content, "docker-compose") {
-		steps = append(steps, "Docker operations")
+		steps = append(steps, Step{Name: "Docker operations", Description: "Performs Docker operations"})
 	}
 	if strings.Contains(content, "deploy") || strings.Contains(content, "kubectl") {
-		steps = append(steps, "Deployment")
+		steps = append(steps, Step{Name: "Deployment", Description: "Deploys the project"})
 	}
 	if strings.Contains(content, "lint") || strings.Contains(content, "eslint") {
-		steps = append(steps, "Linting")
+		steps = append(steps, Step{Name: "Linting", Description: "Runs linter"})
 	}
 	if strings.Contains(content, "security") || strings.Contains(content, "scan") {
-		steps = append(steps, "Security scanning")
+		steps = append(steps, Step{Name: "Security scanning", Description: "Performs security scanning"})
 	}
 	if strings.Contains(content, "coverage") || strings.Contains(content, "codecov") {
-		steps = append(steps, "Code coverage")
+		steps = append(steps, Step{Name: "Code coverage", Description: "Checks code coverage"})
 	}
 
-	return steps
+	return steps, nil
 }
