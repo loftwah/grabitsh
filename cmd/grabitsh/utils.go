@@ -52,6 +52,10 @@ func parseBasicTextFile(filename string, buffer *bytes.Buffer) {
 	buffer.Write(fileContent)
 }
 
+type JSONData struct {
+	Data map[string]interface{} `json:"data"`
+}
+
 func parseJSONFile(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -59,14 +63,14 @@ func parseJSONFile(filename string, buffer *bytes.Buffer) {
 		return
 	}
 
-	var parsed map[string]interface{}
-	if err := json.Unmarshal(fileContent, &parsed); err != nil {
+	var jsonData JSONData
+	if err := json.Unmarshal(fileContent, &jsonData); err != nil {
 		buffer.WriteString(fmt.Sprintf("Error parsing %s: %v\n", filename, err))
 		return
 	}
 
 	buffer.WriteString(fmt.Sprintf("\nParsed %s JSON:\n", filename))
-	for key, value := range parsed {
+	for key, value := range jsonData.Data {
 		buffer.WriteString(fmt.Sprintf("  %s: %v\n", key, value))
 	}
 }
@@ -78,15 +82,15 @@ func parseYAMLFile(filename string, buffer *bytes.Buffer) {
 		return
 	}
 
-	var parsed map[interface{}]interface{}
+	var parsed map[string]interface{}
 	if err := yaml.Unmarshal(fileContent, &parsed); err != nil {
 		buffer.WriteString(fmt.Sprintf("Error parsing %s: %v\n", filename, err))
 		return
 	}
 
 	buffer.WriteString(fmt.Sprintf("\nParsed %s YAML:\n", filename))
-	for key := range parsed {
-		buffer.WriteString(fmt.Sprintf("  %v\n", key))
+	for key, value := range parsed {
+		buffer.WriteString(fmt.Sprintf("  %s: %v\n", key, value))
 	}
 }
 
@@ -113,8 +117,10 @@ func sanitizeEnvFile(content string) string {
 
 func fileExistsWithExtensions(baseName string, extensions []string) bool {
 	for _, ext := range extensions {
-		if fileExists(baseName + ext) {
-			return true
+		if strings.HasSuffix(baseName+ext, ext) {
+			if fileExists(baseName + ext) {
+				return true
+			}
 		}
 	}
 	return false
