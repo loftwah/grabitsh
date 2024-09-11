@@ -1,7 +1,7 @@
 package grabitsh
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 )
@@ -28,7 +28,7 @@ func analyzeAPIStructure() APIInfo {
 
 	// Analyze API endpoints and HTTP methods
 	for _, file := range apiInfo.Files {
-		content, err := ioutil.ReadFile(file)
+		content, err := os.ReadFile(file)
 		if err != nil {
 			continue
 		}

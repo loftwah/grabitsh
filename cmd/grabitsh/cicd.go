@@ -1,7 +1,7 @@
 package grabitsh
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -35,7 +35,7 @@ func analyzeCICDWorkflows() []CICDSystem {
 		for _, filePattern := range system.files {
 			files, _ := filepath.Glob(filePattern)
 			for _, file := range files {
-				content, err := ioutil.ReadFile(file)
+				content, err := os.ReadFile(file)
 				if err != nil {
 					continue
 				}

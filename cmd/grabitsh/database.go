@@ -1,7 +1,7 @@
 package grabitsh
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -46,7 +46,7 @@ func analyzeDatabaseUsage() DatabaseInfo {
 
 	for dbType, keywords := range dbTypes {
 		for _, file := range dbInfo.ConfigFiles {
-			content, err := ioutil.ReadFile(file)
+			content, err := os.ReadFile(file)
 			if err != nil {
 				continue
 			}
