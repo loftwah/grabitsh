@@ -34,9 +34,15 @@ func PerformAdvancedAnalysis(buffer *bytes.Buffer) {
 		result.FrameworkVersions = extractFrameworkVersions()
 	}()
 
+	// Fix for capturing two return values
 	go func() {
 		defer wg.Done()
-		result.CICDSystems = analyzeCICDWorkflows()
+		cicdSystems, err := analyzeCICDWorkflows() // Capture both values
+		if err != nil {                            // Handle the error
+			buffer.WriteString("Error analyzing CI/CD workflows: " + err.Error() + "\n")
+			return
+		}
+		result.CICDSystems = cicdSystems // Assign result if no error
 	}()
 
 	go func() {
@@ -62,6 +68,7 @@ func PerformAdvancedAnalysis(buffer *bytes.Buffer) {
 
 	wg.Wait()
 
+	// Marshal the result to JSON and write to buffer
 	jsonResult, _ := json.MarshalIndent(result, "", "  ")
 	buffer.WriteString(string(jsonResult))
 }
