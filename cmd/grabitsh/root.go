@@ -55,6 +55,7 @@ func runGrabit(cmd *cobra.Command, args []string) {
 	collectSecurityAnalysis(&outputBuffer)
 	collectPerformanceMetrics(&outputBuffer)
 	DetectImportantFiles(&outputBuffer)
+	PerformAdvancedAnalysis(&outputBuffer)
 
 	// Output results
 	finalizeOutput(outputBuffer.String())
@@ -116,11 +117,18 @@ func collectProjectTypes(buffer *bytes.Buffer) {
 
 func collectTODOs(buffer *bytes.Buffer) {
 	buffer.WriteString("\n### TODOs and FIXMEs ###\n")
-	todoCommand := `grep -r -n --binary-files=without-match "TODO\|FIXME" --exclude-dir={.git,node_modules,vendor} .`
+
+	// Improved exclusion: Exclude grabitsh_chunk files and root.go itself to avoid recursive results
+	todoCommand := `grep -r -n --exclude-dir={.git,node_modules,vendor} --exclude=\*.min.js --exclude=\*.min.css --exclude=\*grabitsh_chunk_*.txt --exclude=root.go --binary-files=without-match "TODO\|FIXME" .`
+
+	// Execute the command
 	todos := runCommand("bash", "-c", todoCommand)
-	if todos == "" {
+
+	// Handle cases where grep fails to find anything or errors out
+	if strings.TrimSpace(todos) == "" {
 		buffer.WriteString("No TODOs or FIXMEs found.\n")
 	} else {
+		buffer.WriteString("Found TODOs and FIXMEs:\n")
 		buffer.WriteString(todos)
 	}
 }
@@ -167,15 +175,6 @@ func collectPerformanceMetrics(buffer *bytes.Buffer) {
 	buffer.WriteString(runCommand("bash", "-c", "find . -name '*.go' -not -path './.git/*' | xargs wc -l"))
 }
 
-func runCommand(name string, arg ...string) string {
-	cmd := exec.Command(name, arg...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Sprintf("Error running command %s %s: %v\n", name, strings.Join(arg, " "), err)
-	}
-	return string(out)
-}
-
 func finalizeOutput(content string) {
 	switch outputMethod {
 	case "stdout":
@@ -211,29 +210,69 @@ func writeChunks(content string) error {
 	chunks := splitIntoChunks(content, chunkSize)
 	totalChunks := len(chunks)
 
-	preamble := `This is part %d of %d of the output from Grabit.sh, a tool that analyzes Git repositories.
+	// Define the preamble formatting function
+	getPreamble := func(part, total, estimatedTokens int) string {
+		return fmt.Sprintf(`This is part %d of %d of the output from Grabit.sh, a tool designed to gather structured data from Git repositories.
 
-Purpose: This output provides a comprehensive analysis of a Git repository, including its structure, configuration, dependencies, and potential issues. Use this information to understand the project, identify areas for improvement, and make informed decisions about the codebase.
+Purpose: This output presents raw information about the structure, configuration, dependencies, and other technical details of a Git repository. This data will serve as a foundation for further analysis, prompting additional questions, and preparing for the next phase of investigation.
 
 Instructions:
-1. Read through the information provided in this chunk.
-2. If this is not the final chunk, wait for the next one before drawing conclusions.
-3. Use the information to answer questions about the repository, suggest improvements, or identify potential issues.
-4. Pay attention to sections like security analysis, performance metrics, and detected project types.
+1. Carefully review the information provided in this chunk.
+2. If this is not the final chunk, continue gathering all chunks before asking questions or proceeding to any analysis.
+3. Pay close attention to any areas that seem incomplete or may require further clarification in phase 2.
+4. Identify **missing pieces** of the project and consider requesting additional data or clarification.
+5. Flag any **gaps or uncertainties** for deeper investigation in subsequent phases.
 
-Content of Chunk %d/%d (Estimated %d tokens):
+**Content of Chunk %d/%d (Estimated %d tokens):**
 
-`
+`, part, total, part, total, estimatedTokens)
+	}
+
+	// Define the final chunk message
+	getFinalChunkMessage := func(part, total int) string {
+		if part < total {
+			return fmt.Sprintf("\n**Continue to next chunk (Chunk %d/%d)**\n", part+1, total)
+		}
+		return "\n**Final chunk—no more parts to follow.**\n"
+	}
+
+	// Add automatic next-phase flags
+	addNextPhaseFlags := func(content string) string {
+		flags := ""
+		if !strings.Contains(content, "database") {
+			flags += "\n**Flag: Missing database configuration.**"
+		}
+		if !strings.Contains(content, "test") {
+			flags += "\n**Flag: No testing framework detected.**"
+		}
+		return content + flags
+	}
+
+	// Add performance summary
+	addPerformanceSummary := func(content string, estimatedTokens int) string {
+		return content + fmt.Sprintf("\n### Performance Summary ###\n- Processed %d tokens in this chunk.\n", estimatedTokens)
+	}
 
 	for i, chunk := range chunks {
+		// Estimate the number of tokens
+		estimatedTokens := len(strings.Fields(chunk)) + len(chunk)/3
+
+		// Build the full content by combining the preamble, chunk, and additional features
+		fullContent := getPreamble(i+1, totalChunks, estimatedTokens)
+		fullContent += addNextPhaseFlags(chunk)
+		fullContent = addPerformanceSummary(fullContent, estimatedTokens)
+		fullContent += getFinalChunkMessage(i+1, totalChunks)
+
+		// Write the chunk to file
 		filename := fmt.Sprintf("grabitsh_chunk_%d.txt", i+1)
-		estimatedTokens := len(strings.Fields(chunk)) + len(chunk)/3 // Same estimation as in splitIntoChunks
-		fullContent := fmt.Sprintf(preamble, i+1, totalChunks, i+1, totalChunks, estimatedTokens) + chunk
 		if err := os.WriteFile(filename, []byte(fullContent), 0644); err != nil {
 			return fmt.Errorf("failed to write chunk %d: %v", i+1, err)
 		}
+
+		// Output success message
 		color.Green("Chunk %d/%d written to %s (Estimated %d tokens)", i+1, totalChunks, filename, estimatedTokens)
 	}
+
 	return nil
 }
 

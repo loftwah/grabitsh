@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -13,19 +14,34 @@ import (
 
 const maxContentLength = 1000
 
-// Utility function to check if a file exists
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	return err == nil && !info.IsDir()
 }
 
-// Utility function to check if a directory exists
 func dirExists(dirname string) bool {
 	info, err := os.Stat(dirname)
 	return err == nil && info.IsDir()
 }
 
-// Utility function to parse basic text files
+func runCommand(name string, arg ...string) string {
+	cmd := exec.Command(name, arg...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Sprintf("Error running command %s %s: %v\n", name, strings.Join(arg, " "), err)
+	}
+	return string(out)
+}
+
+func appendUnique(slice []string, item string) []string {
+	for _, element := range slice {
+		if element == item {
+			return slice
+		}
+	}
+	return append(slice, item)
+}
+
 func parseBasicTextFile(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -36,7 +52,6 @@ func parseBasicTextFile(filename string, buffer *bytes.Buffer) {
 	buffer.Write(fileContent)
 }
 
-// Utility function to parse JSON files
 func parseJSONFile(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -56,7 +71,6 @@ func parseJSONFile(filename string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse YAML files
 func parseYAMLFile(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -76,7 +90,6 @@ func parseYAMLFile(filename string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to truncate file content if it exceeds a certain length
 func truncateContent(content string) string {
 	if len(content) > maxContentLength {
 		return content[:maxContentLength] + "...\n(content truncated)"
@@ -84,7 +97,6 @@ func truncateContent(content string) string {
 	return content
 }
 
-// Utility function to sanitize .env file contents
 func sanitizeEnvFile(content string) string {
 	lines := strings.Split(content, "\n")
 	var sanitized []string
@@ -99,7 +111,6 @@ func sanitizeEnvFile(content string) string {
 	return strings.Join(sanitized, "\n")
 }
 
-// Utility function to check for files with specific extensions
 func fileExistsWithExtensions(baseName string, extensions []string) bool {
 	for _, ext := range extensions {
 		if fileExists(baseName + ext) {
@@ -109,7 +120,6 @@ func fileExistsWithExtensions(baseName string, extensions []string) bool {
 	return false
 }
 
-// Utility function to parse Git config
 func parseGitConfig(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -119,7 +129,6 @@ func parseGitConfig(filename string, buffer *bytes.Buffer) {
 	buffer.WriteString(fmt.Sprintf("Git config contents:\n%s", truncateContent(string(fileContent))))
 }
 
-// Utility function to parse GitHub Actions workflows
 func parseGithubActionsWorkflows(directory string, buffer *bytes.Buffer) {
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -136,7 +145,6 @@ func parseGithubActionsWorkflows(directory string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse Dockerfile
 func parseDockerfile(filename string, buffer *bytes.Buffer) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -150,7 +158,6 @@ func parseDockerfile(filename string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse Docker directories
 func parseDockerDir(directory string, buffer *bytes.Buffer) {
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -167,7 +174,6 @@ func parseDockerDir(directory string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse Kubernetes files
 func parseK8sFiles(directory string, buffer *bytes.Buffer) {
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -184,7 +190,6 @@ func parseK8sFiles(directory string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse Helm chart files
 func parseHelmFiles(directory string, buffer *bytes.Buffer) {
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -201,7 +206,6 @@ func parseHelmFiles(directory string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse directories (for cloud providers)
 func parseDirectoryContents(directory string, buffer *bytes.Buffer) {
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -216,7 +220,6 @@ func parseDirectoryContents(directory string, buffer *bytes.Buffer) {
 	}
 }
 
-// Utility function to parse Gemfile
 func parseGemfile(filename string, buffer *bytes.Buffer) error {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -228,7 +231,6 @@ func parseGemfile(filename string, buffer *bytes.Buffer) error {
 	return nil
 }
 
-// Utility function to parse package.json
 func parsePackageJSON(filename string, buffer *bytes.Buffer) error {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
