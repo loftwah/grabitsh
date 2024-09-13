@@ -210,22 +210,48 @@ func writeChunks(content string) error {
 	chunks := splitIntoChunks(content, chunkSize)
 	totalChunks := len(chunks)
 
-	// Define the preamble formatting function
-	getPreamble := func(part, total, estimatedTokens int) string {
-		return fmt.Sprintf(`This is part %d of %d of the output from Grabit.sh, a tool designed to gather structured data from Git repositories.
+	// Define the analysis template function
+	getAnalysisTemplate := func(part, total, estimatedTokens int, grabitOutput string) string {
+		return fmt.Sprintf(`You are an AI assistant tasked with analyzing and extracting valuable information from the output of a tool called grabit.sh. This tool scans a newly cloned git repository and gathers as much information as possible. Your goal is to process this output and provide a comprehensive summary of the repository's characteristics and contents.
 
-Purpose: This output presents raw information about the structure, configuration, dependencies, and other technical details of a Git repository. This data will serve as a foundation for further analysis, prompting additional questions, and preparing for the next phase of investigation.
+This analysis may be split into multiple chunks due to token limitations. The current chunk number and total number of chunks are provided to you. Please behave accordingly:
 
-Instructions:
-1. Carefully review the information provided in this chunk.
-2. If this is not the final chunk, continue gathering all chunks before asking questions or proceeding to any analysis.
-3. Pay close attention to any areas that seem incomplete or may require further clarification in phase 2.
-4. Identify **missing pieces** of the project and consider requesting additional data or clarification.
-5. Flag any **gaps or uncertainties** for deeper investigation in subsequent phases.
+- If this is chunk 1 of 1, provide a complete analysis.
+- If this is chunk 1 of multiple chunks, begin your analysis but indicate that it's incomplete.
+- If this is a middle chunk, continue the analysis without repeating information from previous chunks.
+- If this is the final chunk of multiple chunks, complete the analysis and provide a comprehensive summary.
 
-**Content of Chunk %d/%d (Estimated %d tokens):**
+Here is the output from grabit.sh for chunk %d of %d:
 
-`, part, total, part, total, estimatedTokens)
+<grabit_output>
+%s
+</grabit_output>
+
+Analyze the provided output and extract all relevant and useful information about the repository. Focus on the following aspects:
+
+1. Repository structure and organization
+2. Main programming languages used
+3. Key files and their purposes
+4. Dependencies and external libraries
+5. Build system or package management tools
+6. Testing framework and test coverage
+7. Documentation availability and quality
+8. Coding standards and style guidelines
+9. Version control information (branches, tags, commit history)
+10. Licensing information
+11. Any unique or noteworthy features of the project
+
+As you analyze the output, think critically about what information would be most valuable to a developer or project manager trying to understand this repository quickly. Look for patterns, unusual elements, or potential areas of concern.
+
+Organize your findings into a clear and concise summary. Use bullet points or short paragraphs to present the information in an easily digestible format. If you encounter any ambiguities or areas that require further investigation, mention these as well.
+
+Present your analysis and summary within <analysis> tags. If this is not the final chunk, end your analysis with a note indicating that the summary is incomplete and will be continued in the next chunk.
+
+Remember to focus on extracting and presenting the most relevant and useful information from the grabit.sh output, providing valuable insights into the repository's characteristics and contents.
+
+**Chunk %d/%d (Estimated %d tokens):**
+
+`, part, total, grabitOutput, part, total, estimatedTokens)
 	}
 
 	// Define the final chunk message
@@ -236,31 +262,12 @@ Instructions:
 		return "\n**Final chunk—no more parts to follow.**\n"
 	}
 
-	// Add automatic next-phase flags
-	addNextPhaseFlags := func(content string) string {
-		flags := ""
-		if !strings.Contains(content, "database") {
-			flags += "\n**Flag: Missing database configuration.**"
-		}
-		if !strings.Contains(content, "test") {
-			flags += "\n**Flag: No testing framework detected.**"
-		}
-		return content + flags
-	}
-
-	// Add performance summary
-	addPerformanceSummary := func(content string, estimatedTokens int) string {
-		return content + fmt.Sprintf("\n### Performance Summary ###\n- Processed %d tokens in this chunk.\n", estimatedTokens)
-	}
-
 	for i, chunk := range chunks {
 		// Estimate the number of tokens
 		estimatedTokens := len(strings.Fields(chunk)) + len(chunk)/3
 
-		// Build the full content by combining the preamble, chunk, and additional features
-		fullContent := getPreamble(i+1, totalChunks, estimatedTokens)
-		fullContent += addNextPhaseFlags(chunk)
-		fullContent = addPerformanceSummary(fullContent, estimatedTokens)
+		// Build the full content using the analysis template
+		fullContent := getAnalysisTemplate(i+1, totalChunks, estimatedTokens, chunk)
 		fullContent += getFinalChunkMessage(i+1, totalChunks)
 
 		// Write the chunk to file
