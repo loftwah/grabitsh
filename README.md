@@ -90,7 +90,7 @@ If you prefer to build from source or want the latest development version:
 3. Navigate to the project directory:
 
    ```bash
-   cd grabit.sh
+   cd grabitsh
    ```
 
 4. Build the project:
